@@ -45,19 +45,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    // onAuthStateChange fires once immediately with the current session (or null),
+    // then again on every sign-in/sign-out/token-refresh — so this alone covers both
+    // the initial load and later changes; a separate getSession() call isn't needed.
+    //
+    // IMPORTANT: never await another Supabase call directly inside this callback.
+    // The callback runs while the auth client holds an internal lock, and awaiting
+    // e.g. a `.from(...)` query here can deadlock — most visibly on page reload,
+    // when a stored session gets validated during client init. Deferring with
+    // setTimeout(0) lets this callback return immediately, releasing the lock
+    // before the profile fetch actually runs.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return;
-      setSession(data.session);
-      if (data.session) await loadProfile(data.session.user.id);
-      setLoading(false);
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
       if (newSession) {
-        await loadProfile(newSession.user.id);
+        setTimeout(() => {
+          if (!mounted) return;
+          loadProfile(newSession.user.id).finally(() => {
+            if (mounted) setLoading(false);
+          });
+        }, 0);
       } else {
         setProfile(null);
+        setLoading(false);
       }
     });
 
