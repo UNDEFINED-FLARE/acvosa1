@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+<<<<<<< HEAD
     // onAuthStateChange fires once immediately with the current session (or null),
     // then again on every sign-in/sign-out/token-refresh — so this alone covers both
     // the initial load and later changes; a separate getSession() call isn't needed.
@@ -68,6 +69,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
         setLoading(false);
+=======
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!mounted) return;
+      setSession(data.session);
+      if (data.session) await loadProfile(data.session.user.id);
+      setLoading(false);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      setSession(newSession);
+      if (newSession) {
+        await loadProfile(newSession.user.id);
+      } else {
+        setProfile(null);
+>>>>>>> 9d138ee (working supabase project)
       }
     });
 
