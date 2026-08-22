@@ -1,0 +1,519 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import type {
+  Activity,
+  AppNotification,
+  AttendanceRecord,
+  Deadline,
+  HistoryEvent,
+  ImpactSnapshot,
+  Member,
+  Participant,
+  Project,
+  Reservation,
+  Role,
+  User,
+} from '@/types';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+
+interface Toast {
+  id: number;
+  message: string;
+  tone: 'success' | 'info' | 'error';
+}
+
+interface AppState {
+  role: Role;
+  user: User;
+  loading: boolean;
+
+  activities: Activity[];
+  deadlines: Deadline[];
+  attendanceRecords: AttendanceRecord[];
+  reservations: Reservation[];
+  notifications: AppNotification[];
+  projects: Project[];
+  members: Member[];
+  impact: ImpactSnapshot;
+  history: HistoryEvent[];
+
+  reservePlace: (activityId: string) => Promise<void>;
+  cancelReservation: (activityId: string) => Promise<void>;
+  isReserved: (activityId: string) => boolean;
+  hasAttended: (activityId: string) => boolean;
+  confirmAttendance: (activityId: string) => Promise<void>;
+  fetchParticipants: (activityId: string) => Promise<Participant[]>;
+
+  unreadCount: number;
+  markAllRead: () => Promise<void>;
+  markRead: (id: string) => Promise<void>;
+  sendNotification: (n: { title: string; message: string; category?: AppNotification['category']; activityId?: string }) => Promise<void>;
+
+  createActivity: (a: Omit<Activity, 'id' | 'reserved' | 'status'>) => Promise<void>;
+  createProject: (p: Omit<Project, 'id'>) => Promise<void>;
+
+  toasts: Toast[];
+  pushToast: (message: string, tone?: Toast['tone']) => void;
+  dismissToast: (id: number) => void;
+}
+
+const AppContext = createContext<AppState | null>(null);
+
+function resolveActivityState(a: Activity): Activity {
+  const start = new Date(`${a.date}T${a.startTime}:00`);
+  const end = new Date(`${a.date}T${a.endTime}:00`);
+  const now = new Date();
+  let status: Activity['status'] = 'upcoming';
+  if (now >= start && now <= end) status = 'active';
+  else if (now > end) status = 'completed';
+  return { ...a, status };
+}
+
+// ---- row mappers: DB (snake_case) -> app types (camelCase) ----
+
+function mapActivity(row: any): Activity {
+  return resolveActivityState({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    category: row.category,
+    date: row.date,
+    startTime: row.start_time?.slice(0, 5) ?? row.start_time,
+    endTime: row.end_time?.slice(0, 5) ?? row.end_time,
+    venue: row.venue,
+    capacity: row.capacity,
+    reserved: row.reserved ?? 0,
+    registrationDeadline: row.registration_deadline,
+    organizer: row.organizer,
+    attendanceMethod: row.attendance_method,
+    requirements: row.requirements ?? [],
+    imageSeed: row.image_seed ?? row.category?.toLowerCase(),
+    status: 'upcoming',
+  });
+}
+
+function mapReservation(row: any, activityName: string, venue: string, date: string): Reservation {
+  return {
+    id: row.id,
+    activityId: row.activity_id,
+    activityName,
+    date,
+    venue,
+    status: row.status,
+    ticketCode: row.ticket_code,
+  };
+}
+
+function mapAttendance(row: any, activityName: string, date: string): AttendanceRecord {
+  return {
+    id: row.id,
+    activityId: row.activity_id,
+    activityName,
+    date,
+    checkInTime: row.check_in_time,
+    status: row.status,
+  };
+}
+
+function mapNotification(row: any): AppNotification {
+  return {
+    id: row.id,
+    title: row.title,
+    message: row.message,
+    category: row.category,
+    timestamp: new Date(row.created_at).toLocaleString(),
+    read: row.read,
+    activityId: row.activity_id ?? undefined,
+  };
+}
+
+function mapProject(row: any): Project {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    objectives: row.objectives ?? [],
+    date: row.date,
+    location: row.location,
+    status: row.status,
+    team: (row.project_team ?? []).map((t: any) => ({ name: t.name, role: t.role })),
+    participants: row.participants,
+    volunteers: row.volunteers,
+    sessions: row.sessions,
+    satisfaction: Number(row.satisfaction),
+    community: row.community,
+    phases: (row.project_phases ?? [])
+      .sort((a: any, b: any) => a.position - b.position)
+      .map((p: any) => ({ title: p.title, date: p.date, description: p.description, done: p.done })),
+    evidenceCount: row.evidence_count,
+    documents: row.documents ?? [],
+    results: row.results ?? [],
+  };
+}
+
+function mapMember(row: any): Member {
+  return {
+    id: row.id,
+    name: row.name,
+    studentNumber: row.student_number ?? '',
+    email: row.email,
+    faculty: row.faculty ?? '',
+    role: row.role,
+    activitiesAttended: row.activities_attended,
+    volunteerHours: Number(row.volunteer_hours),
+    joined: row.joined,
+    status: row.status,
+  };
+}
+
+const EMPTY_IMPACT: ImpactSnapshot = {
+  year: '—',
+  activities: 0,
+  participants: 0,
+  projects: 0,
+  volunteerHours: 0,
+  communities: 0,
+  attendanceRate: 0,
+};
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const { session, profile } = useAuth();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [history, setHistory] = useState<HistoryEvent[]>([]);
+  const [impact, setImpact] = useState<ImpactSnapshot>(EMPTY_IMPACT);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const role: Role = profile?.role ?? 'student';
+  const user: User = {
+    name: profile?.full_name ?? '',
+    role,
+    studentNumber: profile?.student_number ?? undefined,
+    email: profile?.email ?? '',
+    faculty: profile?.faculty ?? '',
+    joined: profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }) : '',
+    avatarSeed: (profile?.full_name ?? 'U').split(' ').map((s) => s[0]).join('').slice(0, 2).toUpperCase(),
+  };
+
+  const pushToast = useCallback((message: string, tone: Toast['tone'] = 'success') => {
+    const id = Date.now() + Math.random();
+    setToasts((t) => [...t, { id, message, tone }]);
+    window.setTimeout(() => {
+      setToasts((t) => t.filter((x) => x.id !== id));
+    }, 3600);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((t) => t.filter((x) => x.id !== id));
+  }, []);
+
+  const refetchActivities = useCallback(async () => {
+    const { data, error } = await supabase.from('activities_with_counts').select('*').order('date', { ascending: true });
+    if (!error && data) setActivities(data.map(mapActivity));
+  }, []);
+
+  const refetchReservations = useCallback(async () => {
+    if (!session) return;
+    const { data, error } = await supabase
+      .from('reservations')
+      .select('*, activities(name, venue, date)')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+    if (!error && data) {
+      setReservations(data.map((r: any) => mapReservation(r, r.activities?.name ?? '', r.activities?.venue ?? '', r.activities?.date ?? '')));
+    }
+  }, [session]);
+
+  const refetchAttendance = useCallback(async () => {
+    if (!session) return;
+    const { data, error } = await supabase
+      .from('attendance_records')
+      .select('*, activities(name, date)')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+    if (!error && data) {
+      setAttendanceRecords(data.map((r: any) => mapAttendance(r, r.activities?.name ?? '', r.activities?.date ?? '')));
+    }
+  }, [session]);
+
+  const refetchNotifications = useCallback(async () => {
+    if (!session) return;
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('recipient_id', session.user.id)
+      .order('created_at', { ascending: false });
+    if (!error && data) setNotifications(data.map(mapNotification));
+  }, [session]);
+
+  const refetchProjects = useCallback(async () => {
+    const { data, error } = await supabase.from('projects').select('*, project_team(*), project_phases(*)').order('date', { ascending: false });
+    if (!error && data) setProjects(data.map(mapProject));
+  }, []);
+
+  const refetchMembers = useCallback(async () => {
+    if (role !== 'admin') {
+      setMembers([]);
+      return;
+    }
+    const { data, error } = await supabase.from('members').select('*').order('name', { ascending: true });
+    if (!error && data) setMembers(data.map(mapMember));
+  }, [role]);
+
+  const refetchDeadlines = useCallback(async () => {
+    const { data, error } = await supabase.from('deadlines').select('*').order('date', { ascending: true });
+    if (!error && data) {
+      setDeadlines(
+        data.map((d: any) => ({ id: d.id, title: d.title, date: d.date, priority: d.priority, activityId: d.activity_id ?? undefined }))
+      );
+    }
+  }, []);
+
+  const refetchHistoryAndImpact = useCallback(async () => {
+    const [historyRes, impactRes] = await Promise.all([
+      supabase.from('history_events').select('*').order('year', { ascending: true }),
+      supabase.from('impact_snapshots').select('*').order('year', { ascending: false }).limit(1),
+    ]);
+    if (!historyRes.error && historyRes.data) {
+      setHistory(historyRes.data.map((h: any) => ({ year: h.year, title: h.title, description: h.description })));
+    }
+    if (!impactRes.error && impactRes.data && impactRes.data[0]) {
+      const i = impactRes.data[0];
+      setImpact({
+        year: i.year,
+        activities: i.activities,
+        participants: i.participants,
+        projects: i.projects,
+        volunteerHours: i.volunteer_hours,
+        communities: i.communities,
+        attendanceRate: Number(i.attendance_rate),
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!session) {
+      setActivities([]);
+      setReservations([]);
+      setAttendanceRecords([]);
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    Promise.all([
+      refetchActivities(),
+      refetchReservations(),
+      refetchAttendance(),
+      refetchNotifications(),
+      refetchProjects(),
+      refetchMembers(),
+      refetchDeadlines(),
+      refetchHistoryAndImpact(),
+    ]).finally(() => setLoading(false));
+  }, [session, role, refetchActivities, refetchReservations, refetchAttendance, refetchNotifications, refetchProjects, refetchMembers, refetchDeadlines, refetchHistoryAndImpact]);
+
+  const isReserved = useCallback(
+    (activityId: string) => reservations.some((r) => r.activityId === activityId && r.status === 'confirmed'),
+    [reservations]
+  );
+
+  const hasAttended = useCallback(
+    (activityId: string) => attendanceRecords.some((r) => r.activityId === activityId && r.status === 'present'),
+    [attendanceRecords]
+  );
+
+  const reservePlace = useCallback(
+    async (activityId: string) => {
+      const { error } = await supabase.rpc('reserve_activity', { p_activity_id: activityId });
+      if (error) {
+        pushToast(error.message, 'error');
+        return;
+      }
+      await Promise.all([refetchActivities(), refetchReservations(), refetchNotifications()]);
+      pushToast('Place reserved', 'success');
+    },
+    [pushToast, refetchActivities, refetchReservations, refetchNotifications]
+  );
+
+  const cancelReservation = useCallback(
+    async (activityId: string) => {
+      const { error } = await supabase.rpc('cancel_reservation', { p_activity_id: activityId });
+      if (error) {
+        pushToast(error.message, 'error');
+        return;
+      }
+      await Promise.all([refetchActivities(), refetchReservations()]);
+      pushToast('Reservation cancelled', 'info');
+    },
+    [pushToast, refetchActivities, refetchReservations]
+  );
+
+  const confirmAttendance = useCallback(
+    async (activityId: string) => {
+      const { error } = await supabase.rpc('confirm_attendance', { p_activity_id: activityId });
+      if (error) {
+        pushToast(error.message, 'error');
+        return;
+      }
+      await Promise.all([refetchAttendance(), refetchNotifications()]);
+      pushToast('Attendance confirmed', 'success');
+    },
+    [pushToast, refetchAttendance, refetchNotifications]
+  );
+
+  const fetchParticipants = useCallback(async (activityId: string): Promise<Participant[]> => {
+    const { data, error } = await supabase.from('activity_participants').select('*').eq('activity_id', activityId);
+    if (error || !data) return [];
+    return data.map((p: any) => ({
+      id: `${p.activity_id}-${p.user_id}`,
+      activityId: p.activity_id,
+      name: p.name,
+      studentNumber: p.student_number ?? '',
+      reserved: p.reserved,
+      attended: p.attended,
+      checkInTime: p.check_in_time,
+    }));
+  }, []);
+
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
+
+  const markAllRead = useCallback(async () => {
+    if (!session) return;
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    await supabase.from('notifications').update({ read: true }).eq('recipient_id', session.user.id).eq('read', false);
+  }, [session]);
+
+  const markRead = useCallback(async (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    await supabase.from('notifications').update({ read: true }).eq('id', id);
+  }, []);
+
+  const sendNotification = useCallback(
+    async (n: { title: string; message: string; category?: AppNotification['category']; activityId?: string }) => {
+      const { error } = await supabase.rpc('broadcast_notification', {
+        p_title: n.title,
+        p_message: n.message,
+        p_category: n.category ?? 'system',
+        p_activity_id: n.activityId ?? null,
+      });
+      if (error) {
+        pushToast(error.message, 'error');
+        return;
+      }
+      pushToast('Notification sent', 'success');
+    },
+    [pushToast]
+  );
+
+  const createActivity = useCallback(
+    async (a: Omit<Activity, 'id' | 'reserved' | 'status'>) => {
+      const { error } = await supabase.from('activities').insert({
+        name: a.name,
+        description: a.description,
+        category: a.category,
+        date: a.date,
+        start_time: a.startTime,
+        end_time: a.endTime,
+        venue: a.venue,
+        capacity: a.capacity,
+        registration_deadline: a.registrationDeadline,
+        organizer: a.organizer,
+        attendance_method: a.attendanceMethod,
+        requirements: a.requirements,
+        image_seed: a.imageSeed,
+      });
+      if (error) {
+        pushToast(error.message, 'error');
+        return;
+      }
+      await refetchActivities();
+      pushToast(`${a.name} published`, 'success');
+    },
+    [pushToast, refetchActivities]
+  );
+
+  const createProject = useCallback(
+    async (p: Omit<Project, 'id'>) => {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          title: p.title,
+          description: p.description,
+          objectives: p.objectives,
+          date: p.date,
+          location: p.location,
+          status: p.status,
+          participants: p.participants,
+          volunteers: p.volunteers,
+          sessions: p.sessions,
+          satisfaction: p.satisfaction,
+          community: p.community,
+          evidence_count: p.evidenceCount,
+          documents: p.documents,
+          results: p.results,
+        })
+        .select('id')
+        .single();
+      if (error || !data) {
+        pushToast(error?.message ?? 'Failed to create project', 'error');
+        return;
+      }
+      if (p.team.length > 0) {
+        await supabase.from('project_team').insert(p.team.map((t) => ({ project_id: data.id, name: t.name, role: t.role })));
+      }
+      if (p.phases.length > 0) {
+        await supabase
+          .from('project_phases')
+          .insert(p.phases.map((ph, i) => ({ project_id: data.id, title: ph.title, date: ph.date, description: ph.description, done: ph.done, position: i })));
+      }
+      await refetchProjects();
+      pushToast(`${p.title} created`, 'success');
+    },
+    [pushToast, refetchProjects]
+  );
+
+  const value: AppState = {
+    role,
+    user,
+    loading,
+    activities,
+    deadlines,
+    attendanceRecords,
+    reservations,
+    notifications,
+    projects,
+    members,
+    impact,
+    history,
+    reservePlace,
+    cancelReservation,
+    isReserved,
+    hasAttended,
+    confirmAttendance,
+    fetchParticipants,
+    unreadCount,
+    markAllRead,
+    markRead,
+    sendNotification,
+    createActivity,
+    createProject,
+    toasts,
+    pushToast,
+    dismissToast,
+  };
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+export function useApp() {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used within AppProvider');
+  return ctx;
+}

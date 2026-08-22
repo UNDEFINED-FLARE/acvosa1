@@ -1,0 +1,142 @@
+import { useState, type FormEvent } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Loader2, ArrowRight } from 'lucide-react';
+
+export function Login() {
+  const { signIn, signUp } = useAuth();
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [studentNumber, setStudentNumber] = useState('');
+  const [faculty, setFaculty] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    setSubmitting(true);
+
+    if (mode === 'signin') {
+      const { error } = await signIn(email, password);
+      if (error) setError(error);
+    } else {
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters.');
+        setSubmitting(false);
+        return;
+      }
+      const { error } = await signUp({ email, password, fullName, studentNumber, faculty });
+      if (error) {
+        setError(error);
+      } else {
+        setInfo('Check your inbox to confirm your email, then sign in.');
+        setMode('signin');
+      }
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-ink-off-white flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md animate-slide-up">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-11 h-11 rounded-2xl bg-ink-black flex items-center justify-center">
+              <span className="text-ink-white font-bold text-lg tracking-tighter">A</span>
+            </div>
+            <div className="leading-none">
+              <p className="font-bold text-lg text-ink-charcoal tracking-tight">ACVOSA</p>
+              <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-1">Connect</p>
+            </div>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl font-bold text-ink-charcoal tracking-tight leading-tight">
+            {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+          </h1>
+          <p className="text-sm sm:text-base text-ink-dark-grey/70 mt-3 tracking-tight">
+            The institutional platform for ACVOSA — University of Venda.
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-3">
+            {mode === 'signup' && (
+              <>
+                <input
+                  required
+                  placeholder="Full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="p-4 bg-ink-white border border-ink-light-grey rounded-2xl text-sm tracking-tight focus:outline-none focus:border-ink-grey"
+                />
+                <input
+                  placeholder="Student number (optional)"
+                  value={studentNumber}
+                  onChange={(e) => setStudentNumber(e.target.value)}
+                  className="p-4 bg-ink-white border border-ink-light-grey rounded-2xl text-sm tracking-tight focus:outline-none focus:border-ink-grey"
+                />
+                <input
+                  placeholder="Faculty (optional)"
+                  value={faculty}
+                  onChange={(e) => setFaculty(e.target.value)}
+                  className="p-4 bg-ink-white border border-ink-light-grey rounded-2xl text-sm tracking-tight focus:outline-none focus:border-ink-grey"
+                />
+              </>
+            )}
+            <input
+              required
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="p-4 bg-ink-white border border-ink-light-grey rounded-2xl text-sm tracking-tight focus:outline-none focus:border-ink-grey"
+            />
+            <input
+              required
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="p-4 bg-ink-white border border-ink-light-grey rounded-2xl text-sm tracking-tight focus:outline-none focus:border-ink-grey"
+            />
+
+            {error && <p className="text-sm text-red-600 tracking-tight">{error}</p>}
+            {info && <p className="text-sm text-emerald-700 tracking-tight">{info}</p>}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="group flex items-center justify-center gap-2 p-4 bg-ink-charcoal text-ink-white rounded-2xl shadow-soft hover:shadow-card transition-all duration-300 font-semibold tracking-tight disabled:opacity-60"
+            >
+              {submitting ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <>
+                  {mode === 'signin' ? 'Sign in' : 'Sign up'}
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-all" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <button
+            onClick={() => {
+              setMode(mode === 'signin' ? 'signup' : 'signin');
+              setError(null);
+              setInfo(null);
+            }}
+            className="w-full text-center text-sm text-ink-dark-grey/70 mt-6 tracking-tight hover:text-ink-charcoal transition-colors"
+          >
+            {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+          </button>
+
+          <p className="text-xs text-ink-dark-grey/45 mt-8 tracking-tight text-center">
+            New accounts are students by default. Admin access is granted by an existing administrator.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

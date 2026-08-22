@@ -1,0 +1,84 @@
+rules_version = '2';
+
+// ─── ACVOSA Connect — Firebase Storage Security Rules ──────────────
+// Controls access to file uploads (activity images, profile images, project evidence).
+// Validates file type and size. Only authorized users can upload/delete.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function userRole() {
+      return userDoc().role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userRole() in ['admin', 'superAdmin'];
+    }
+
+    function isStaff() {
+      return isSignedIn() && userRole() in ['admin', 'superAdmin', 'eventManager', 'projectManager', 'reportViewer'];
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isDocument() {
+      return request.resource.contentType.matches('application/pdf')
+        || request.resource.contentType.matches('application/msword')
+        || request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*')
+        || request.resource.contentType.matches('text/.*');
+    }
+
+    function isValidImageSize() {
+      return request.resource.size < 5 * 1024 * 1024; // 5 MB max for images
+    }
+
+    function isValidDocumentSize() {
+      return request.resource.size < 20 * 1024 * 1024; // 20 MB max for documents
+    }
+
+    // ─── Activity images ────────────────────────────────────────────
+    // Only staff can upload activity images. All authenticated users can read.
+    match /activities/{fileId} {
+      allow read: if isSignedIn();
+      allow write: if isStaff() && isImage() && isValidImageSize();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Profile images ─────────────────────────────────────────────
+    // Users can upload their own profile image. Others can read.
+    match /profiles/{userId}/{fileId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+        && request.auth.uid == userId
+        && isImage()
+        && isValidImageSize();
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
+    // ─── Project evidence ───────────────────────────────────────────
+    // Only staff can upload project evidence (images, PDFs, documents).
+    // All authenticated users can read.
+    match /projects/{projectId}/{fileId} {
+      allow read: if isSignedIn();
+      allow write: if isStaff()
+        && (isImage() || isDocument())
+        && (isImage() ? isValidImageSize() : isValidDocumentSize());
+      allow delete: if isAdmin();
+    }
+
+    // ─── Default deny ───────────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

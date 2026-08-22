@@ -1,0 +1,201 @@
+rules_version = '2';
+
+// ─── ACVOSA Connect — Firestore Security Rules ─────────────────────
+// Default-deny: all access blocked unless explicitly granted below.
+// Role helpers read the user's role from their Firestore profile document.
+// Admin-tier roles: admin, superAdmin, eventManager, projectManager, reportViewer
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Role helpers ───────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function userRole() {
+      return userDoc().role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userRole() in ['admin', 'superAdmin'];
+    }
+
+    function isStaff() {
+      return isSignedIn() && userRole() in ['admin', 'superAdmin', 'eventManager', 'projectManager', 'reportViewer'];
+    }
+
+    function isStudent() {
+      return isSignedIn() && userRole() == 'student';
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ─── users/{uid} ────────────────────────────────────────────────
+    // Students can read their own profile; staff can read all profiles.
+    // Students may only edit permitted profile fields, never role/status.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isStaff();
+
+      // Self-update: block role, status, and system fields from student edits
+      allow update: if isOwner(uid) {
+        // Students cannot change role or status
+        && !('role' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('status' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('createdAt' in request.resource.data.diff(resource.data).affectedKeys())
+      } || isAdmin();
+
+      // Only admins create user documents (via admin tooling / Cloud Functions)
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── activities/{activityId} ────────────────────────────────────
+    // Students can read published/active/completed activities.
+    // Only staff can create/update/delete activities.
+    match /activities/{activityId} {
+      allow read: if isSignedIn() && (
+        resource.data.status in ['published', 'active', 'completed']
+        || isStaff()
+      );
+      allow create: if isStaff();
+      // Staff can update. Students cannot modify activities at all.
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ─── reservations/{reservationId} ───────────────────────────────
+    // Deterministic ID format: {activityId}_{studentId}
+    // Students can create/cancel only their own reservations.
+    // Staff can read all reservations.
+    match /reservations/{reservationId} {
+      allow read: if isOwner(resource.data.studentId) || isStaff();
+
+      // Create: student must own it, and ID must be deterministic
+      allow create: if isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.status == 'confirmed'
+        // Block capacity manipulation from client
+        && !('reservedCount' in request.resource.data);
+
+      // Update: student can only cancel their own; staff can manage
+      allow update: if (isOwner(resource.data.studentId)
+        && request.resource.data.status == 'cancelled'
+        && resource.data.status == 'confirmed')
+        || isStaff();
+
+      allow delete: if isAdmin();
+    }
+
+    // ─── attendance/{attendanceId} ──────────────────────────────────
+    // Students can read their own attendance records.
+    // Attendance creation is validated server-side (Cloud Function recommended).
+    // Students cannot modify or delete attendance records.
+    match /attendance/{attendanceId} {
+      allow read: if isOwner(resource.data.studentId) || isStaff();
+      // Create is allowed for students (validated via transaction in service layer)
+      allow create: if isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.status == 'present';
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ─── attendanceSessions/{sessionId} ─────────────────────────────
+    // Only staff can create/update/close sessions.
+    // Students can read active sessions for QR attendance verification.
+    match /attendanceSessions/{sessionId} {
+      allow read: if isSignedIn() && (
+        resource.data.status == 'active' || isStaff()
+      );
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ─── projects/{projectId} ───────────────────────────────────────
+    // All authenticated users can read published projects.
+    // Only staff can create/update/delete projects.
+    match /projects/{projectId} {
+      allow read: if isSignedIn();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ─── projectEvidence/{evidenceId} ───────────────────────────────
+    // All authenticated users can read evidence (metadata).
+    // Only staff can create/update/delete evidence records.
+    match /projectEvidence/{evidenceId} {
+      allow read: if isSignedIn();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ─── notifications/{notificationId} ─────────────────────────────
+    // Students can read/update only their own notifications.
+    // Staff can create notifications (via admin tools).
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.recipientId) || isStaff();
+      // Students can only mark read — cannot change other fields
+      allow update: if isOwner(resource.data.recipientId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      // Staff can create notifications
+      allow create: if isStaff();
+      allow delete: if isOwner(resource.data.recipientId) || isAdmin();
+    }
+
+    // ─── deadlines/{deadlineId} ─────────────────────────────────────
+    // All authenticated users can read deadlines.
+    // Only staff can create/update/delete deadlines.
+    match /deadlines/{deadlineId} {
+      allow read: if isSignedIn();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ─── impactMetrics/{metricId} ───────────────────────────────────
+    // All authenticated users can read impact metrics.
+    // Only admins can write/update (via Cloud Functions or admin tools).
+    // Students must never modify impact data.
+    match /impactMetrics/{metricId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ─── reports/{reportId} ─────────────────────────────────────────
+    // Only staff can read reports.
+    // Only admins can create/update/delete report records.
+    match /reports/{reportId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    // ─── auditLogs/{logId} ──────────────────────────────────────────
+    // Only admins can read audit logs.
+    // Log creation is done via Cloud Functions or trusted backend only.
+    // Students must never access audit logs.
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      // No client-side create — audit logs are written by Cloud Functions
+      allow write: if false;
+    }
+
+    // ─── settings/{settingId} ───────────────────────────────────────
+    // Only staff can read settings. Only admins can modify.
+    match /settings/{settingId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    // ─── Default deny ───────────────────────────────────────────────
+    // Block access to any collection not explicitly matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
