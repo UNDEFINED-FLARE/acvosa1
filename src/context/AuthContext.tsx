@@ -20,7 +20,13 @@ interface AuthState {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (params: { email: string; password: string; fullName: string; studentNumber?: string; faculty?: string }) => Promise<{ error: string | null }>;
+  signUp: (params: {
+    email: string;
+    password: string;
+    fullName: string;
+    studentNumber?: string;
+    faculty?: string;
+  }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -32,69 +38,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(userId: string) {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
     if (error) {
-      // eslint-disable-next-line no-console
       console.error('Failed to load profile', error);
       setProfile(null);
       return;
     }
+
     setProfile(data as Profile | null);
   }
 
   useEffect(() => {
     let mounted = true;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 203ddbd (working)
-    // onAuthStateChange fires once immediately with the current session (or null),
-    // then again on every sign-in/sign-out/token-refresh — so this alone covers both
-    // the initial load and later changes; a separate getSession() call isn't needed.
-    //
-    // IMPORTANT: never await another Supabase call directly inside this callback.
-    // The callback runs while the auth client holds an internal lock, and awaiting
-    // e.g. a `.from(...)` query here can deadlock — most visibly on page reload,
-    // when a stored session gets validated during client init. Deferring with
-    // setTimeout(0) lets this callback return immediately, releasing the lock
-    // before the profile fetch actually runs.
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-<<<<<<< HEAD
-      if (!mounted) return;
-      setSession(newSession);
-      if (newSession) {
-        setTimeout(() => {
-          if (!mounted) return;
-          loadProfile(newSession.user.id).finally(() => {
-            if (mounted) setLoading(false);
-          });
-        }, 0);
-      } else {
-        setProfile(null);
-        setLoading(false);
-=======
-    supabase.auth.getSession().then(async ({ data }) => {
-=======
->>>>>>> 203ddbd (working)
-      if (!mounted) return;
-      setSession(newSession);
-      if (newSession) {
-        setTimeout(() => {
-          if (!mounted) return;
-          loadProfile(newSession.user.id).finally(() => {
-            if (mounted) setLoading(false);
-          });
-        }, 0);
-      } else {
-        setProfile(null);
-<<<<<<< HEAD
->>>>>>> 9d138ee (working supabase project)
-=======
-        setLoading(false);
->>>>>>> 203ddbd (working)
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        if (!mounted) return;
+
+        setSession(newSession);
+
+        if (newSession) {
+          setTimeout(() => {
+            if (!mounted) return;
+
+            loadProfile(newSession.user.id).finally(() => {
+              if (mounted) setLoading(false);
+            });
+          }, 0);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
       }
-    });
+    );
 
     return () => {
       mounted = false;
@@ -103,18 +84,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn: AuthState['signIn'] = async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
     return { error: error?.message ?? null };
   };
 
-  const signUp: AuthState['signUp'] = async ({ email, password, fullName, studentNumber, faculty }) => {
+  const signUp: AuthState['signUp'] = async ({
+    email,
+    password,
+    fullName,
+    studentNumber,
+    faculty,
+  }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, student_number: studentNumber, faculty },
+        data: {
+          full_name: fullName,
+          student_number: studentNumber,
+          faculty,
+        },
       },
     });
+
     return { error: error?.message ?? null };
   };
 
@@ -123,7 +119,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, profile, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        profile,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -131,6 +136,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+
+  if (!ctx) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+
   return ctx;
 }
