@@ -8,13 +8,14 @@ import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { Modal } from '@/components/ui/Modal';
 import { ActivityImage } from '@/components/ui/ActivityImage';
+import { QrScanner } from '@/components/student/QrScanner';
 import { formatDate, daysUntil } from '@/utils/format';
 import {
-  Calendar, Clock, MapPin, Check, QrCode, MapPin as Gps,
-  Bluetooth, ShieldCheck, Loader2, Lock, AlertCircle,
+  Calendar, Clock, MapPin, Check, QrCode,
+  ShieldCheck, Loader2, Lock, AlertCircle,
 } from 'lucide-react';
 
-type VerifyState = 'idle' | 'verifying' | 'confirmed';
+type VerifyState = 'idle' | 'verifying' | 'confirmed' | 'invalid';
 
 export function ActivityDetail() {
   const { activities, isReserved, reservePlace, cancelReservation, hasAttended, confirmAttendance, attendanceRecords } = useApp();
@@ -23,7 +24,6 @@ export function ActivityDetail() {
 
   const [verifyOpen, setVerifyOpen] = useState(false);
   const [verifyState, setVerifyState] = useState<VerifyState>('idle');
-  const [method, setMethod] = useState<'QR' | 'GPS' | 'Bluetooth'>('QR');
 
   if (!activity) {
     return (
@@ -43,12 +43,17 @@ export function ActivityDetail() {
   const isActive = activity.status === 'active';
   const isCompleted = activity.status === 'completed';
 
-  const startVerify = () => {
+  const handleScan = async (raw: string) => {
+    if (verifyState !== 'idle') return;
+    const [prefix, scannedActivityId, code] = raw.split(':');
+    if (prefix !== 'ACVOSA' || scannedActivityId !== activity.id || !code) {
+      setVerifyState('invalid');
+      window.setTimeout(() => setVerifyState('idle'), 1800);
+      return;
+    }
     setVerifyState('verifying');
-    window.setTimeout(async () => {
-      await confirmAttendance(activity.id);
-      setVerifyState('confirmed');
-    }, 2600);
+    const ok = await confirmAttendance(activity.id, code);
+    setVerifyState(ok ? 'confirmed' : 'idle');
   };
 
   const attendanceMessage = () => {
@@ -152,7 +157,7 @@ export function ActivityDetail() {
               </div>
               <div>
                 <dt className="text-2xs text-ink-dark-grey/50 uppercase tracking-wider">Attendance method</dt>
-                <dd className="font-medium text-ink-charcoal mt-1 tracking-tight">{activity.attendanceMethod}</dd>
+                <dd className="font-medium text-ink-charcoal mt-1 tracking-tight">QR code scan</dd>
               </div>
               <div>
                 <dt className="text-2xs text-ink-dark-grey/50 uppercase tracking-wider">Registration deadline</dt>
@@ -229,76 +234,33 @@ export function ActivityDetail() {
           </Card>
 
           <Card>
-            <h3 className="text-sm font-semibold text-ink-charcoal tracking-tight">Attendance methods</h3>
-            <div className="mt-3 flex flex-col gap-2">
-              {[
-                { icon: QrCode, label: 'QR Code verification' },
-                { icon: Gps, label: 'Location (GPS) verification' },
-                { icon: Bluetooth, label: 'Bluetooth proximity (optional)' },
-              ].map((m, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-ink-off-white">
-                  <m.icon size={18} className="text-ink-dark-grey/60 shrink-0" />
-                  <span className="text-sm text-ink-dark-grey/80 tracking-tight">{m.label}</span>
-                  {activity.attendanceMethod.includes(i === 0 ? 'QR' : i === 1 ? 'GPS' : 'Bluetooth') && (
-                    <Check size={15} className="text-ink-charcoal ml-auto" />
-                  )}
-                </div>
-              ))}
+            <h3 className="text-sm font-semibold text-ink-charcoal tracking-tight">Attendance method</h3>
+            <div className="mt-3 flex items-center gap-3 p-3 rounded-xl bg-ink-off-white">
+              <QrCode size={18} className="text-ink-dark-grey/60 shrink-0" />
+              <span className="text-sm text-ink-dark-grey/80 tracking-tight">Scan the QR code displayed by the admin at the activity</span>
             </div>
           </Card>
         </div>
       </div>
 
       {/* Attendance verification modal */}
-      <Modal open={verifyOpen} onClose={() => { setVerifyOpen(false); setVerifyState('idle'); }} title="Verify Attendance">
-        {verifyState === 'idle' && (
+      <Modal open={verifyOpen} onClose={() => { setVerifyOpen(false); setVerifyState('idle'); }} title="Scan to Check In">
+        {(verifyState === 'idle' || verifyState === 'invalid') && (
           <div>
-            <p className="text-sm text-ink-dark-grey/70 tracking-tight mb-4">Choose a verification method to check in.</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { key: 'QR', icon: QrCode, label: 'QR Code' },
-                { key: 'GPS', icon: Gps, label: 'Location' },
-                { key: 'Bluetooth', icon: Bluetooth, label: 'Bluetooth' },
-              ] as const).map((m) => (
-                <button
-                  key={m.key}
-                  onClick={() => setMethod(m.key)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-                    method === m.key ? 'border-ink-black bg-ink-light-grey' : 'border-ink-light-grey hover:border-ink-grey'
-                  }`}
-                >
-                  <m.icon size={22} className={method === m.key ? 'text-ink-black' : 'text-ink-dark-grey/60'} />
-                  <span className="text-2xs font-medium tracking-tight text-ink-charcoal">{m.label}</span>
-                </button>
-              ))}
-            </div>
-            <Button fullWidth className="mt-5" onClick={startVerify}>
-              <ShieldCheck size={16} /> Start Verification
-            </Button>
+            <p className="text-sm text-ink-dark-grey/70 tracking-tight mb-4">
+              Point your camera at the QR code the admin is displaying for this activity.
+            </p>
+            <QrScanner onDetected={handleScan} paused={verifyState !== 'idle'} />
+            {verifyState === 'invalid' && (
+              <p className="text-sm text-red-600 mt-3 tracking-tight text-center">That code doesn't match this activity. Try again.</p>
+            )}
           </div>
         )}
 
         {verifyState === 'verifying' && (
           <div className="text-center py-6">
-            <div className="relative w-48 h-48 mx-auto">
-              <div className="absolute inset-0 rounded-2xl bg-ink-light-grey flex items-center justify-center overflow-hidden">
-                {method === 'QR' && (
-                  <div className="grid grid-cols-7 gap-1 p-6">
-                    {Array.from({ length: 49 }).map((_, i) => (
-                      <span key={i} className={`w-3 h-3 rounded-[2px] ${Math.random() > 0.45 ? 'bg-ink-black' : 'bg-transparent'}`} />
-                    ))}
-                  </div>
-                )}
-                {method === 'GPS' && <Gps size={48} className="text-ink-charcoal animate-pulse-soft" />}
-                {method === 'Bluetooth' && <Bluetooth size={48} className="text-ink-charcoal animate-pulse-soft" />}
-                {method === 'QR' && <div className="absolute left-3 right-3 h-0.5 bg-ink-black/70 shadow-[0_0_12px_2px_rgba(17,17,17,0.4)] animate-scan" />}
-              </div>
-            </div>
-            <p className="text-sm font-medium text-ink-charcoal mt-5 tracking-tight">Verifying your attendance...</p>
-            <div className="flex items-center justify-center gap-2 mt-2 text-ink-dark-grey/60">
-              <Loader2 size={14} className="animate-spin-slow" />
-              <span className="text-xs tracking-tight">{method === 'QR' ? 'Scanning QR code' : method === 'GPS' ? 'Confirming location' : 'Detecting proximity'}</span>
-            </div>
+            <Loader2 size={32} className="text-ink-charcoal mx-auto animate-spin-slow" />
+            <p className="text-sm font-medium text-ink-charcoal mt-4 tracking-tight">Verifying your attendance...</p>
           </div>
         )}
 
@@ -320,5 +282,4 @@ export function ActivityDetail() {
     </PageContainer>
   );
 }
-
 

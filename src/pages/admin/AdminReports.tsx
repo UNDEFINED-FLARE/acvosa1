@@ -20,50 +20,78 @@ interface ReportType {
   fields: string[];
 }
 
-const REPORTS: ReportType[] = [
-  {
-    id: 'activity',
-    title: 'Activity Report',
-    description: 'Summary of all activities, registrations, and attendance.',
-    icon: Calendar,
-    fields: ['42 activities', '3,842 participants', '91% attendance rate'],
-  },
-  {
-    id: 'attendance',
-    title: 'Attendance Report',
-    description: 'Detailed attendance records across all activities.',
-    icon: CheckSquare,
-    fields: ['1,240 check-ins', '87% average rate', '13 no-shows recorded'],
-  },
-  {
-    id: 'project',
-    title: 'Project Report',
-    description: 'Status and impact of all ACVOSA projects.',
-    icon: FolderKanban,
-    fields: ['28 projects', '4 completed', '1,813 students reached'],
-  },
-  {
-    id: 'impact',
-    title: 'Impact Report',
-    description: 'Institutional impact metrics and community reach.',
-    icon: BarChart3,
-    fields: ['15 communities', '1,240 volunteer hours', '92% satisfaction'],
-  },
-  {
-    id: 'annual',
-    title: 'Annual ACVOSA Report',
-    description: 'Complete yearly review of ACVOSA operations and impact.',
-    icon: BookOpen,
-    fields: ['2026 full year', 'All metrics included', 'Board-ready format'],
-  },
-];
-
 type GenState = 'idle' | 'generating' | 'done';
 
 export function AdminReports() {
-  const { pushToast } = useApp();
+  const { pushToast, activities, members, projects, impact } = useApp();
   const [open, setOpen] = useState<ReportType | null>(null);
   const [state, setState] = useState<GenState>('idle');
+
+  const totalReserved = activities.reduce((s, a) => s + a.reserved, 0);
+  const totalAttended = activities.reduce((s, a) => s + a.attendedCount, 0);
+  const totalNoShows = activities.reduce((s, a) => s + a.noShowCount, 0);
+  const attendanceRate = totalReserved > 0 ? Math.round((totalAttended / totalReserved) * 100) : 0;
+  const completedActivities = activities.filter((a) => a.status === 'completed').length;
+  const completedProjects = projects.filter((p) => p.status === 'completed').length;
+  const studentsReached = projects.reduce((s, p) => s + p.participants, 0);
+
+  const REPORTS: ReportType[] = [
+    {
+      id: 'activity',
+      title: 'Activity Report',
+      description: 'Summary of all activities, registrations, and attendance.',
+      icon: Calendar,
+      fields: [
+        `${activities.length} activities`,
+        `${totalReserved.toLocaleString()} registrations`,
+        `${attendanceRate}% attendance rate`,
+      ],
+    },
+    {
+      id: 'attendance',
+      title: 'Attendance Report',
+      description: 'Detailed attendance records across all activities.',
+      icon: CheckSquare,
+      fields: [
+        `${totalAttended.toLocaleString()} check-ins`,
+        `${attendanceRate}% average rate`,
+        `${totalNoShows} no-shows recorded`,
+      ],
+    },
+    {
+      id: 'project',
+      title: 'Project Report',
+      description: 'Status and impact of all ACVOSA projects.',
+      icon: FolderKanban,
+      fields: [
+        `${projects.length} projects`,
+        `${completedProjects} completed`,
+        `${studentsReached.toLocaleString()} students reached`,
+      ],
+    },
+    {
+      id: 'impact',
+      title: 'Impact Report',
+      description: 'Institutional impact metrics and community reach.',
+      icon: BarChart3,
+      fields: [
+        `${impact.communities} communities`,
+        `${impact.volunteerHours.toLocaleString()} volunteer hours`,
+        `${members.length} active members`,
+      ],
+    },
+    {
+      id: 'annual',
+      title: 'Annual ACVOSA Report',
+      description: 'Complete yearly review of ACVOSA operations and impact.',
+      icon: BookOpen,
+      fields: [
+        `${impact.year} full year`,
+        `${completedActivities} activities completed`,
+        'Board-ready format',
+      ],
+    },
+  ];
 
   const generate = () => {
     setState('generating');

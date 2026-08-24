@@ -5,11 +5,10 @@ import { PageContainer } from '@/components/layout/Topbar';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import type { ActivityCategory, AttendanceMethod } from '@/types';
+import type { ActivityCategory } from '@/types';
 import { ArrowLeft, Check, ImageIcon } from 'lucide-react';
 
 const CATEGORIES: ActivityCategory[] = ['Workshops', 'Community', 'Academic', 'Leadership', 'Social', 'Volunteer'];
-const METHODS: AttendanceMethod[] = ['QR', 'GPS', 'Bluetooth', 'QR + GPS'];
 
 interface FormData {
   name: string;
@@ -21,14 +20,13 @@ interface FormData {
   venue: string;
   capacity: string;
   registrationDeadline: string;
-  attendanceMethod: AttendanceMethod;
   requirements: string;
   organizer: string;
 }
 
 const initial: FormData = {
   name: '', description: '', category: 'Workshops', date: '', startTime: '09:00', endTime: '12:00',
-  venue: '', capacity: '50', registrationDeadline: '', attendanceMethod: 'QR + GPS',
+  venue: '', capacity: '50', registrationDeadline: '',
   requirements: '', organizer: 'ACVOSA',
 };
 
@@ -62,7 +60,6 @@ export function AdminCreateActivity() {
       venue: form.venue,
       capacity: parseInt(form.capacity, 10) || 50,
       registrationDeadline: form.registrationDeadline || form.date,
-      attendanceMethod: form.attendanceMethod,
       requirements: requirementsList.length > 0 ? requirementsList : ['Valid student card'],
       organizer: form.organizer,
       imageSeed: form.category.toLowerCase(),
@@ -141,25 +138,6 @@ export function AdminCreateActivity() {
           </Card>
 
           <Card>
-            <h2 className="text-base font-semibold text-ink-charcoal tracking-tight mb-4">Attendance Method</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {METHODS.map((m) => (
-                <button
-                  key={m}
-                  onClick={() => set('attendanceMethod', m)}
-                  className={`p-3 rounded-xl border text-sm font-medium tracking-tight transition-all ${
-                    form.attendanceMethod === m
-                      ? 'border-ink-black bg-ink-light-grey text-ink-charcoal'
-                      : 'border-ink-light-grey text-ink-dark-grey hover:border-ink-grey'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          <Card>
             <h2 className="text-base font-semibold text-ink-charcoal tracking-tight mb-4">Requirements</h2>
             <div className="flex gap-2">
               <input
@@ -202,7 +180,7 @@ export function AdminCreateActivity() {
               <div className="flex justify-between"><span className="text-ink-dark-grey/60 tracking-tight">Category</span><span className="font-medium text-ink-charcoal">{form.category}</span></div>
               <div className="flex justify-between"><span className="text-ink-dark-grey/60 tracking-tight">Date</span><span className="font-medium text-ink-charcoal">{form.date || '—'}</span></div>
               <div className="flex justify-between"><span className="text-ink-dark-grey/60 tracking-tight">Capacity</span><span className="font-medium text-ink-charcoal tabular-nums">{form.capacity}</span></div>
-              <div className="flex justify-between"><span className="text-ink-dark-grey/60 tracking-tight">Method</span><span className="font-medium text-ink-charcoal">{form.attendanceMethod}</span></div>
+              <div className="flex justify-between"><span className="text-ink-dark-grey/60 tracking-tight">Attendance</span><span className="font-medium text-ink-charcoal">QR code (generated after publishing)</span></div>
             </div>
           </Card>
 

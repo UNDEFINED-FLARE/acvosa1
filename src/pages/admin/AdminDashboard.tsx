@@ -5,8 +5,6 @@ import { Card } from '@/components/ui/Card';
 import { StatTile } from '@/components/ui/StatTile';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { LineChart, BarChart } from '@/components/ui/Charts';
-import { chartSeries } from '@/data/mockData';
 import { formatDate } from '@/utils/format';
 import {
   Users, CalendarDays, Activity as ActivityIcon, Ticket, FolderKanban,
@@ -25,8 +23,6 @@ export function AdminDashboard() {
   const recentActivities = [...activities]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 4);
-
-  const series = chartSeries['2026'];
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
@@ -51,9 +47,6 @@ export function AdminDashboard() {
         <StatTile label="Students Reached" value={studentsReached.toLocaleString()} icon={<Users size={16} />} />
         <StatTile label="Volunteer Hours" value={impact.volunteerHours.toLocaleString()} icon={<Clock size={16} />} />
       </div>
-
-      {/* Charts */}
-
 
       {/* Recent activities */}
       <div className="mt-6">

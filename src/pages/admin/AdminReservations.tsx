@@ -33,8 +33,6 @@ export function AdminReservations() {
           <tbody className="divide-y divide-ink-light-grey">
             {activities.map((a) => {
               const available = a.capacity - a.reserved;
-              const attended = a.status === 'completed' ? Math.round(a.reserved * 0.85) : 0;
-              const noShows = a.status === 'completed' ? a.reserved - attended : 0;
               return (
                 <tr key={a.id} className="hover:bg-ink-off-white transition-colors">
                   <td className="px-5 py-4">
@@ -44,8 +42,8 @@ export function AdminReservations() {
                   <td className="text-center tabular-nums text-ink-dark-grey/70 px-3 py-4">{a.capacity}</td>
                   <td className="text-center tabular-nums font-medium text-ink-charcoal px-3 py-4">{a.reserved}</td>
                   <td className="text-center tabular-nums text-ink-dark-grey/70 px-3 py-4">{available}</td>
-                  <td className="text-center tabular-nums text-ink-dark-grey/70 px-3 py-4">{attended || '—'}</td>
-                  <td className="text-center tabular-nums text-ink-dark-grey/70 px-3 py-4">{noShows || '—'}</td>
+                  <td className="text-center tabular-nums text-ink-dark-grey/70 px-3 py-4">{a.attendedCount || '—'}</td>
+                  <td className="text-center tabular-nums text-ink-dark-grey/70 px-3 py-4">{a.noShowCount || '—'}</td>
                   <td className="px-5 py-4 text-right">
                     <Button variant="ghost" size="sm" onClick={() => navigate('admin-attendance')}>
                       <Eye size={14} /> Participants

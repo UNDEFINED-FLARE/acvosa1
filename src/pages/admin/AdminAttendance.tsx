@@ -6,13 +6,14 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { StatTile } from '@/components/ui/StatTile';
-import { Download, Check, X, Users } from 'lucide-react';
+import { Download, Check, X, Users, QrCode, RefreshCw } from 'lucide-react';
 import type { Participant } from '@/types';
 
 export function AdminAttendance() {
-  const { activities, fetchParticipants } = useApp();
+  const { activities, fetchParticipants, generateAttendanceCode } = useApp();
   const [selectedActivity, setSelectedActivity] = useState(activities[0]?.id ?? '');
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (activities.length > 0 && !selectedActivity) setSelectedActivity(activities[0].id);
@@ -27,6 +28,18 @@ export function AdminAttendance() {
   const checkedIn = participants.filter((p) => p.attended).length;
   const absent = participants.filter((p) => p.reserved && !p.attended).length;
   const rate = participants.length > 0 ? Math.round((checkedIn / participants.length) * 100) : 0;
+
+  const handleGenerate = async () => {
+    if (!activity) return;
+    setGenerating(true);
+    await generateAttendanceCode(activity.id);
+    setGenerating(false);
+  };
+
+  const qrPayload = activity?.attendanceCode ? `ACVOSA:${activity.id}:${activity.attendanceCode}` : null;
+  const qrImageUrl = qrPayload
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(qrPayload)}`
+    : null;
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
@@ -57,6 +70,26 @@ export function AdminAttendance() {
             <StatTile label="Absent" value={absent} />
             <StatTile label="Attendance" value={`${rate}%`} />
           </div>
+
+          <Card className="mt-6 flex flex-col sm:flex-row items-center gap-6">
+            <div className="w-40 h-40 rounded-xl bg-ink-off-white border border-ink-light-grey flex items-center justify-center shrink-0 overflow-hidden">
+              {qrImageUrl ? (
+                <img src={qrImageUrl} alt="Attendance check-in QR code" className="w-full h-full object-contain" />
+              ) : (
+                <QrCode size={40} className="text-ink-dark-grey/30" />
+              )}
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-sm font-semibold text-ink-charcoal tracking-tight">Check-in QR Code</h3>
+              <p className="text-xs text-ink-dark-grey/60 mt-1 tracking-tight max-w-sm">
+                Students can only mark attendance by scanning this code. Display it at the venue — regenerate it any time to invalidate the old one.
+              </p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={handleGenerate} disabled={generating}>
+                <RefreshCw size={14} className={generating ? 'animate-spin' : ''} />
+                {activity?.attendanceCode ? 'Regenerate Code' : 'Generate Code'}
+              </Button>
+            </div>
+          </Card>
 
           <div className="mt-6 flex items-center justify-between">
             <h2 className="text-base font-semibold text-ink-charcoal tracking-tight">Participant List</h2>

@@ -10,8 +10,6 @@ export type ActivityCategory =
 
 export type ActivityState = 'upcoming' | 'active' | 'completed';
 
-export type AttendanceMethod = 'QR' | 'GPS' | 'Bluetooth' | 'QR + GPS';
-
 export type ReservationStatus = 'confirmed' | 'completed' | 'cancelled';
 
 export type AttendanceStatus = 'present' | 'absent' | 'pending';
@@ -37,9 +35,11 @@ export interface Activity {
   venue: string;
   capacity: number;
   reserved: number;
+  attendedCount: number;
+  noShowCount: number;
   registrationDeadline: string; // ISO date
   organizer: string;
-  attendanceMethod: AttendanceMethod;
+  attendanceCode: string | null;
   requirements: string[];
   imageSeed: string;
   status: ActivityState;

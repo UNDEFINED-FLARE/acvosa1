@@ -45,8 +45,8 @@ export function Login() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md animate-slide-up">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-11 h-11 rounded-2xl bg-ink-white flex items-center justify-center">
-              <img src="https://i.ibb.co/Ndkgz1LY/grok-1787423357591.png" alt="ACVOSA Logo" className="w-18 h-18" />
+            <div className="w-11 h-11 rounded-2xl bg-ink-black flex items-center justify-center">
+              <span className="text-ink-white font-bold text-lg tracking-tighter">A</span>
             </div>
             <div className="leading-none">
               <p className="font-bold text-lg text-ink-charcoal tracking-tight">ACVOSA</p>

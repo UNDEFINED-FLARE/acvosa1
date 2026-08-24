@@ -41,15 +41,16 @@ interface AppState {
   cancelReservation: (activityId: string) => Promise<void>;
   isReserved: (activityId: string) => boolean;
   hasAttended: (activityId: string) => boolean;
-  confirmAttendance: (activityId: string) => Promise<void>;
+  confirmAttendance: (activityId: string, code: string) => Promise<boolean>;
   fetchParticipants: (activityId: string) => Promise<Participant[]>;
+  generateAttendanceCode: (activityId: string) => Promise<string | null>;
 
   unreadCount: number;
   markAllRead: () => Promise<void>;
   markRead: (id: string) => Promise<void>;
   sendNotification: (n: { title: string; message: string; category?: AppNotification['category']; activityId?: string }) => Promise<void>;
 
-  createActivity: (a: Omit<Activity, 'id' | 'reserved' | 'status'>) => Promise<void>;
+  createActivity: (a: Omit<Activity, 'id' | 'reserved' | 'status' | 'attendedCount' | 'noShowCount' | 'attendanceCode'>) => Promise<void>;
   createProject: (p: Omit<Project, 'id'>) => Promise<void>;
 
   toasts: Toast[];
@@ -83,9 +84,11 @@ function mapActivity(row: any): Activity {
     venue: row.venue,
     capacity: row.capacity,
     reserved: row.reserved ?? 0,
+    attendedCount: row.attended_count ?? 0,
+    noShowCount: row.no_show_count ?? 0,
     registrationDeadline: row.registration_deadline,
     organizer: row.organizer,
-    attendanceMethod: row.attendance_method,
+    attendanceCode: row.attendance_code ?? null,
     requirements: row.requirements ?? [],
     imageSeed: row.image_seed ?? row.category?.toLowerCase(),
     status: 'upcoming',
@@ -356,16 +359,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const confirmAttendance = useCallback(
-    async (activityId: string) => {
-      const { error } = await supabase.rpc('confirm_attendance', { p_activity_id: activityId });
+    async (activityId: string, code: string) => {
+      const { error } = await supabase.rpc('confirm_attendance', { p_activity_id: activityId, p_code: code });
       if (error) {
         pushToast(error.message, 'error');
-        return;
+        return false;
       }
-      await Promise.all([refetchAttendance(), refetchNotifications()]);
+      await Promise.all([refetchAttendance(), refetchNotifications(), refetchActivities()]);
       pushToast('Attendance confirmed', 'success');
+      return true;
     },
-    [pushToast, refetchAttendance, refetchNotifications]
+    [pushToast, refetchAttendance, refetchNotifications, refetchActivities]
+  );
+
+  const generateAttendanceCode = useCallback(
+    async (activityId: string) => {
+      const { data, error } = await supabase.rpc('generate_attendance_code', { p_activity_id: activityId });
+      if (error) {
+        pushToast(error.message, 'error');
+        return null;
+      }
+      await refetchActivities();
+      return data as string;
+    },
+    [pushToast, refetchActivities]
   );
 
   const fetchParticipants = useCallback(async (activityId: string): Promise<Participant[]> => {
@@ -425,7 +442,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         capacity: a.capacity,
         registration_deadline: a.registrationDeadline,
         organizer: a.organizer,
-        attendance_method: a.attendanceMethod,
         requirements: a.requirements,
         image_seed: a.imageSeed,
       });
@@ -498,6 +514,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     hasAttended,
     confirmAttendance,
     fetchParticipants,
+    generateAttendanceCode,
     unreadCount,
     markAllRead,
     markRead,

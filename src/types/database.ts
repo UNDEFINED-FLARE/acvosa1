@@ -14,7 +14,7 @@ export type Database = {
     Tables: {
       activities: {
         Row: {
-          attendance_method: Database["public"]["Enums"]["attendance_method"] | null
+          attendance_code: string | null
           capacity: number
           category: Database["public"]["Enums"]["activity_category"]
           created_at: string
@@ -33,7 +33,7 @@ export type Database = {
           venue: string | null
         }
         Insert: {
-          attendance_method?: Database["public"]["Enums"]["attendance_method"] | null
+          attendance_code?: string | null
           capacity?: number
           category: Database["public"]["Enums"]["activity_category"]
           created_at?: string
@@ -52,7 +52,7 @@ export type Database = {
           venue?: string | null
         }
         Update: {
-          attendance_method?: Database["public"]["Enums"]["attendance_method"] | null
+          attendance_code?: string | null
           capacity?: number
           category?: Database["public"]["Enums"]["activity_category"]
           created_at?: string
@@ -481,6 +481,8 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      confirm_attendance: { Args: { p_activity_id: string; p_code: string }; Returns: Json }
+      generate_attendance_code: { Args: { p_activity_id: string }; Returns: string }
     }
     Enums: {
       activity_category:
@@ -491,7 +493,6 @@ export type Database = {
         | "Social"
         | "Volunteer"
       activity_state: "upcoming" | "active" | "completed"
-      attendance_method: "QR" | "GPS" | "Bluetooth" | "QR + GPS"
       attendance_status: "present" | "absent" | "pending"
       member_role: "Member" | "Coordinator" | "Volunteer"
       notification_category:

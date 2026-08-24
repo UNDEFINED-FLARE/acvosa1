@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { ActivityCard } from '@/components/student/ActivityCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Avatar } from '@/components/ui/Avatar';
-import { initials, formatDate, relativeDeadline, classForPriority } from '@/utils/format';
+import { initials, formatDate, relativeDeadline, classForPriority, daysUntil } from '@/utils/format';
 import {
   CalendarDays, CheckSquare, Ticket, FolderKanban, ArrowRight,
   Clock, MapPin, Calendar, AlertCircle,
@@ -26,9 +26,12 @@ export function StudentDashboard() {
   const { navigate } = useNav();
 
   const upcoming = activities.filter((a) => a.status !== 'completed').sort((a, b) => a.date.localeCompare(b.date));
-  const featured = activities.find((a) => a.id === 'a1') ?? upcoming[0];
+  const featured = upcoming[0];
   const upcomingList = upcoming.filter((a) => a.id !== featured?.id).slice(0, 3);
   const sortedDeadlines = [...deadlines].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+  const closingSoon = [...activities]
+    .filter((a) => a.status === 'upcoming' && daysUntil(a.registrationDeadline) >= 0)
+    .sort((a, b) => daysUntil(a.registrationDeadline) - daysUntil(b.registrationDeadline))[0];
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
@@ -97,7 +100,7 @@ export function StudentDashboard() {
                 <p className="text-sm text-ink-dark-grey/60 uppercase tracking-widest mt-1">
                   {['January','February','March','April','May','June','July','August','September','October','November','December'][new Date(featured.date + 'T00:00:00').getMonth()]}
                 </p>
-                <p className="text-xs text-ink-dark-grey/45 mt-3 tracking-tight">UNIVEN Campus</p>
+                <p className="text-xs text-ink-dark-grey/45 mt-3 tracking-tight truncate max-w-[10rem]">{featured.venue}</p>
               </div>
             </div>
           </div>
@@ -157,18 +160,22 @@ export function StudentDashboard() {
             </div>
           </Card>
 
-          <Card className="mt-4 bg-ink-charcoal text-ink-white border-ink-charcoal">
-            <div className="flex items-start gap-3">
-              <AlertCircle size={20} className="text-ink-white/80 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium tracking-tight">Registration closes soon</p>
-                <p className="text-xs text-ink-white/65 mt-1 tracking-tight">Entrepreneurship Workshop registration closes in 5 days. Don't miss out.</p>
-                <button onClick={() => navigate('activities')} className="text-xs font-medium text-ink-white underline underline-offset-2 mt-3 tracking-tight">
-                  Browse activities
-                </button>
+          {closingSoon && (
+            <Card className="mt-4 bg-ink-charcoal text-ink-white border-ink-charcoal">
+              <div className="flex items-start gap-3">
+                <AlertCircle size={20} className="text-ink-white/80 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium tracking-tight">Registration closes soon</p>
+                  <p className="text-xs text-ink-white/65 mt-1 tracking-tight">
+                    {closingSoon.name} registration closes {daysUntil(closingSoon.registrationDeadline) === 0 ? 'today' : `in ${daysUntil(closingSoon.registrationDeadline)} day${daysUntil(closingSoon.registrationDeadline) === 1 ? '' : 's'}`}. Don't miss out.
+                  </p>
+                  <button onClick={() => navigate('activity-detail', { id: closingSoon.id })} className="text-xs font-medium text-ink-white underline underline-offset-2 mt-3 tracking-tight">
+                    View activity
+                  </button>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          )}
         </div>
       </div>
     </PageContainer>

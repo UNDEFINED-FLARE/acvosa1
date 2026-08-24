@@ -11,9 +11,21 @@ import { initials, formatDate } from '@/utils/format';
 import { Mail, Building2, CalendarDays, Award, Clock, CheckSquare, Settings, LogOut } from 'lucide-react';
 
 export function ProfilePage() {
-  const { user, attendanceRecords, reservations, impact } = useApp();
+  const { user, attendanceRecords, reservations, impact, members, activities } = useApp();
   const { signOut } = useAuth();
   const { navigate } = useNav();
+
+  const relevantReservations = reservations.filter((r) => r.status === 'confirmed' || r.status === 'completed');
+  const attendanceRate = relevantReservations.length > 0
+    ? Math.round((attendanceRecords.length / relevantReservations.length) * 100)
+    : 0;
+  const member = members.find((m) => (user.studentNumber && m.studentNumber === user.studentNumber) || m.email === user.email);
+  const volunteerHours = member?.volunteerHours ?? 0;
+  const attendedCategories = Array.from(new Set(
+    attendanceRecords
+      .map((r) => activities.find((a) => a.id === r.activityId)?.category)
+      .filter((c): c is NonNullable<typeof c> => Boolean(c))
+  ));
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
@@ -53,8 +65,8 @@ export function ProfilePage() {
       <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatTile label="Activities Attended" value={attendanceRecords.length} icon={<CheckSquare size={16} />} />
         <StatTile label="Active Reservations" value={reservations.filter((r) => r.status === 'confirmed').length} icon={<CalendarDays size={16} />} />
-        <StatTile label="Volunteer Hours" value={48} icon={<Clock size={16} />} />
-        <StatTile label="Attendance Rate" value="91%" icon={<Award size={16} />} />
+        <StatTile label="Volunteer Hours" value={volunteerHours} icon={<Clock size={16} />} />
+        <StatTile label="Attendance Rate" value={`${attendanceRate}%`} icon={<Award size={16} />} />
       </div>
 
       {/* Participation summary */}
@@ -64,10 +76,11 @@ export function ProfilePage() {
           You have participated in {attendanceRecords.length} activities and contributed to ACVOSA's reach of {impact.participants.toLocaleString()} students across {impact.communities} communities.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Badge tone="outline">Workshops</Badge>
-          <Badge tone="outline">Community Outreach</Badge>
-          <Badge tone="outline">Leadership</Badge>
-          <Badge tone="outline">Academic</Badge>
+          {attendedCategories.length > 0 ? (
+            attendedCategories.map((c) => <Badge key={c} tone="outline">{c}</Badge>)
+          ) : (
+            <span className="text-xs text-ink-dark-grey/50 tracking-tight">No attendance recorded yet.</span>
+          )}
         </div>
       </Card>
 

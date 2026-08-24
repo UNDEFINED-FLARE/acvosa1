@@ -16,6 +16,7 @@ const TABS: { key: ReservationStatus | 'all'; label: string }[] = [
 ];
 
 function QRTicket({ code, name, date, venue }: { code: string; name: string; date: string; venue: string }) {
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=4&data=${encodeURIComponent(code)}`;
   return (
     <div className="bg-ink-white border border-ink-light-grey rounded-2xl p-5 shadow-soft">
       <div className="flex items-center justify-between mb-4">
@@ -23,18 +24,15 @@ function QRTicket({ code, name, date, venue }: { code: string; name: string; dat
         <Ticket size={16} className="text-ink-dark-grey/40" />
       </div>
       <div className="flex gap-4">
-        <div className="shrink-0 w-24 h-24 rounded-xl bg-ink-white border border-ink-light-grey p-2.5">
-          <div className="grid grid-cols-7 gap-0.5 h-full">
-            {Array.from({ length: 49 }).map((_, i) => (
-              <span key={i} className={`rounded-[1px] ${Math.random() > 0.42 ? 'bg-ink-black' : 'bg-transparent'}`} />
-            ))}
-          </div>
+        <div className="shrink-0 w-24 h-24 rounded-xl bg-ink-white border border-ink-light-grey p-1.5 overflow-hidden">
+          <img src={qrImageUrl} alt="Reservation ticket code" className="w-full h-full object-contain" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-ink-charcoal tracking-tight line-clamp-2">{name}</p>
           <p className="text-xs text-ink-dark-grey/60 mt-1.5 tracking-tight flex items-center gap-1.5"><Calendar size={11} /> {formatDate(date, 'long')}</p>
           <p className="text-xs text-ink-dark-grey/60 mt-1 tracking-tight flex items-center gap-1.5 truncate"><MapPin size={11} /> {venue}</p>
           <p className="text-2xs font-mono text-ink-dark-grey/50 mt-2 tracking-tight truncate">{code}</p>
+          <p className="text-2xs text-ink-dark-grey/40 mt-1 tracking-tight">Proof of reservation — check in with the venue's attendance QR code.</p>
         </div>
       </div>
     </div>
