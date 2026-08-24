@@ -53,16 +53,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Charts */}
-      <div className="mt-6 grid lg:grid-cols-2 gap-6">
-        <Card>
-          <h3 className="text-sm font-semibold text-ink-charcoal tracking-tight mb-4">Activities published (2026)</h3>
-          <BarChart data={series.activities} height={200} />
-        </Card>
-        <Card>
-          <h3 className="text-sm font-semibold text-ink-charcoal tracking-tight mb-4">Student participation (2026)</h3>
-          <LineChart data={series.participation} height={200} />
-        </Card>
-      </div>
+
 
       {/* Recent activities */}
       <div className="mt-6">
