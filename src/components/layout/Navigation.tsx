@@ -39,7 +39,7 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-9 h-9 rounded-xl bg-ink-black flex items-center justify-center shrink-0">
-        <span className="text-ink-white font-bold text-sm tracking-tighter">A</span>
+              <span className="text-ink-white font-bold text-lg tracking-tighter"><img src="https://i.ibb.co/Ndkgz1LY/grok-1787423357591.jpg" alt="ACVOSA Logo" className="w-full h-full object-cover" /></span>
       </div>
       {!collapsed && (
         <div className="leading-none">

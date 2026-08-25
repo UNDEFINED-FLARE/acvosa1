@@ -20,6 +20,7 @@ interface AuthState {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   signUp: (params: {
     email: string;
     password: string;
@@ -92,6 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
+  const signInWithGoogle: AuthState['signInWithGoogle'] = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    return { error: error?.message ?? null };
+  };
+
   const signUp: AuthState['signUp'] = async ({
     email,
     password,
@@ -125,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         loading,
         signIn,
+        signInWithGoogle,
         signUp,
         signOut,
       }}
