@@ -28,6 +28,7 @@ import { AdminReservations } from '@/pages/admin/AdminReservations';
 import { AdminAttendance } from '@/pages/admin/AdminAttendance';
 import { AdminNotifications } from '@/pages/admin/AdminNotifications';
 import { AdminProjects } from '@/pages/admin/AdminProjects';
+import { AdminCreateProject } from '@/pages/admin/AdminCreateProject';
 import { AdminImpact } from '@/pages/admin/AdminImpact';
 import { AdminMembers } from '@/pages/admin/AdminMembers';
 import { AdminReports } from '@/pages/admin/AdminReports';
@@ -98,6 +99,7 @@ function renderAdmin(route: string) {
     case 'admin-attendance': return <AdminAttendance />;
     case 'admin-notifications': return <AdminNotifications />;
     case 'admin-projects': return <AdminProjects />;
+    case 'admin-create-project': return <AdminCreateProject />;
     case 'admin-impact': return <AdminImpact />;
     case 'admin-members': return <AdminMembers />;
     case 'admin-reports': return <AdminReports />;

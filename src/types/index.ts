@@ -101,6 +101,7 @@ export interface Project {
   community: string;
   phases: ProjectPhase[];
   evidenceCount: number;
+  evidenceUrls: string[];
   documents: string[];
   results: string[];
 }

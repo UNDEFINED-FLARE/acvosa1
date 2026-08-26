@@ -21,6 +21,7 @@ export type Route =
   | 'admin-attendance'
   | 'admin-notifications'
   | 'admin-projects'
+  | 'admin-create-project'
   | 'admin-impact'
   | 'admin-members'
   | 'admin-reports'

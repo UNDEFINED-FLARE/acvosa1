@@ -19,11 +19,19 @@ export function QrScanner({ onDetected, paused }: QrScannerProps) {
   const pausedRef = useRef(paused);
   const lockedRef = useRef(false);
   const [state, setState] = useState<CameraState>('starting');
+  const [stuck, setStuck] = useState(false);
+  const stuckTimerRef = useRef<number>();
 
   useEffect(() => {
     pausedRef.current = paused;
-    // Once the parent un-pauses us again (e.g. after an invalid-code retry), release the lock.
-    if (!paused) lockedRef.current = false;
+    // Once the parent un-pauses us again (e.g. after an invalid-code retry), release the lock
+    // and give the stuck-hint a fresh window before it reappears.
+    if (!paused) {
+      lockedRef.current = false;
+      setStuck(false);
+      window.clearTimeout(stuckTimerRef.current);
+      stuckTimerRef.current = window.setTimeout(() => setStuck(true), 7000);
+    }
   }, [paused]);
 
   useEffect(() => {
@@ -65,6 +73,7 @@ export function QrScanner({ onDetected, paused }: QrScannerProps) {
           await videoRef.current.play();
         }
         setState('scanning');
+        stuckTimerRef.current = window.setTimeout(() => setStuck(true), 7000);
 
         const canvas = document.createElement('canvas');
         canvasRef.current = canvas;
@@ -87,6 +96,8 @@ export function QrScanner({ onDetected, paused }: QrScannerProps) {
               // Lock immediately so we don't fire onDetected again on the next
               // animation frame while the parent is still processing this scan.
               lockedRef.current = true;
+              window.clearTimeout(stuckTimerRef.current);
+              setStuck(false);
               onDetected(code.data);
             }
           }
@@ -104,6 +115,7 @@ export function QrScanner({ onDetected, paused }: QrScannerProps) {
     return () => {
       cancelled = true;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.clearTimeout(stuckTimerRef.current);
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,6 +148,13 @@ export function QrScanner({ onDetected, paused }: QrScannerProps) {
       {state === 'starting' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
           <Loader2 size={28} className="text-ink-white animate-spin-slow" />
+        </div>
+      )}
+      {state === 'scanning' && stuck && !paused && (
+        <div className="absolute inset-x-0 bottom-0 bg-black/70 px-4 py-3">
+          <p className="text-xs text-ink-white/90 text-center tracking-tight">
+            Not picking it up? Move closer, improve lighting, or try manual entry below.
+          </p>
         </div>
       )}
     </div>

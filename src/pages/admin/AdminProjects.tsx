@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useNav } from '@/context/NavContext';
 import { PageContainer } from '@/components/layout/Topbar';
@@ -5,7 +6,7 @@ import { PageHeader } from '@/components/ui/SectionHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Plus, Users, HeartHandshake, MapPin, ArrowRight, Upload } from 'lucide-react';
+import { Plus, Users, HeartHandshake, MapPin, ArrowRight, Upload, Loader2 } from 'lucide-react';
 import type { ProjectStatus } from '@/types';
 
 const statusTone: Record<ProjectStatus, 'dark' | 'solid' | 'light'> = {
@@ -13,14 +14,40 @@ const statusTone: Record<ProjectStatus, 'dark' | 'solid' | 'light'> = {
 };
 
 export function AdminProjects() {
-  const { projects } = useApp();
+  const { projects, uploadProjectEvidence, pushToast } = useApp();
   const { navigate } = useNav();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadTargetId, setUploadTargetId] = useState<string | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  const triggerUpload = (projectId: string) => {
+    setUploadTargetId(projectId);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !uploadTargetId) return;
+    if (!file.type.startsWith('image/')) {
+      pushToast('Please choose an image file', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      pushToast('Image must be under 5MB', 'error');
+      return;
+    }
+    setUploadingId(uploadTargetId);
+    await uploadProjectEvidence(uploadTargetId, file);
+    setUploadingId(null);
+  };
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <div className="flex items-start justify-between gap-4">
         <PageHeader title="Projects" subtitle="Create and track ACVOSA institutional projects." />
-        <Button size="sm" className="shrink-0">
+        <Button size="sm" className="shrink-0" onClick={() => navigate('admin-create-project')}>
           <Plus size={16} /> New Project
         </Button>
       </div>
@@ -53,8 +80,8 @@ export function AdminProjects() {
               <Button variant="outline" size="sm" fullWidth onClick={() => navigate('project-detail', { id: p.id })}>
                 View <ArrowRight size={14} />
               </Button>
-              <Button variant="secondary" size="sm">
-                <Upload size={14} />
+              <Button variant="secondary" size="sm" onClick={() => triggerUpload(p.id)} disabled={uploadingId === p.id}>
+                {uploadingId === p.id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               </Button>
             </div>
           </Card>

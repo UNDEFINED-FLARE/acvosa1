@@ -135,13 +135,20 @@ export function ProjectDetail() {
       {/* Evidence */}
       <Card className="mt-6">
         <SectionHeader title="Evidence & Photos" subtitle={`${project.evidenceCount} items uploaded`} />
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {Array.from({ length: Math.min(4, project.evidenceCount) }).map((_, i) => (
-            <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-ink-light-grey to-ink-off-white border border-ink-light-grey flex items-center justify-center">
-              <ImageIcon size={22} className="text-ink-dark-grey/30" />
-            </div>
-          ))}
-        </div>
+        {project.evidenceUrls.length > 0 ? (
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {project.evidenceUrls.map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noreferrer" className="aspect-square rounded-xl overflow-hidden border border-ink-light-grey block">
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-col items-center justify-center gap-2 py-8 text-center">
+            <ImageIcon size={22} className="text-ink-dark-grey/30" />
+            <p className="text-xs text-ink-dark-grey/45 tracking-tight">No evidence uploaded yet.</p>
+          </div>
+        )}
       </Card>
 
       {/* Timeline */}

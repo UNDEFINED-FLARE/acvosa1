@@ -26,6 +26,7 @@ export function ActivityDetail() {
   const [verifyState, setVerifyState] = useState<VerifyState>('idle');
   const [manualEntry, setManualEntry] = useState(false);
   const [manualCode, setManualCode] = useState('');
+  const [errorText, setErrorText] = useState<string | null>(null);
 
   if (!activity) {
     return (
@@ -47,23 +48,36 @@ export function ActivityDetail() {
 
   const handleScan = async (raw: string) => {
     if (verifyState !== 'idle') return;
-    const [prefix, scannedActivityId, code] = raw.split(':');
-    if (prefix !== 'ACVOSA' || scannedActivityId !== activity.id || !code) {
+    const [prefix, scannedActivityId, code] = raw.trim().split(':').map((s) => s?.trim());
+    if (prefix?.toUpperCase() !== 'ACVOSA' || scannedActivityId !== activity.id || !code) {
+      setErrorText("That QR code isn't for this activity. Make sure you're scanning the code the admin has on screen right now.");
       setVerifyState('invalid');
-      window.setTimeout(() => setVerifyState('idle'), 1800);
+      window.setTimeout(() => setVerifyState('idle'), 2200);
       return;
     }
     setVerifyState('verifying');
-    const ok = await confirmAttendance(activity.id, code);
-    setVerifyState(ok ? 'confirmed' : 'idle');
+    const { ok, error } = await confirmAttendance(activity.id, code);
+    if (ok) {
+      setVerifyState('confirmed');
+    } else {
+      setErrorText(error);
+      setVerifyState('invalid');
+      window.setTimeout(() => setVerifyState('idle'), 2200);
+    }
   };
 
   const handleManualSubmit = async () => {
     if (!manualCode.trim() || verifyState !== 'idle') return;
     setVerifyState('verifying');
-    const ok = await confirmAttendance(activity.id, manualCode.trim());
-    setVerifyState(ok ? 'confirmed' : 'idle');
-    if (!ok) setManualCode('');
+    const { ok, error } = await confirmAttendance(activity.id, manualCode.trim());
+    if (ok) {
+      setVerifyState('confirmed');
+    } else {
+      setErrorText(error);
+      setVerifyState('invalid');
+      setManualCode('');
+      window.setTimeout(() => setVerifyState('idle'), 2200);
+    }
   };
 
   const attendanceMessage = () => {
@@ -254,7 +268,7 @@ export function ActivityDetail() {
       </div>
 
       {/* Attendance verification modal */}
-      <Modal open={verifyOpen} onClose={() => { setVerifyOpen(false); setVerifyState('idle'); setManualEntry(false); setManualCode(''); }} title="Scan to Check In">
+      <Modal open={verifyOpen} onClose={() => { setVerifyOpen(false); setVerifyState('idle'); setManualEntry(false); setManualCode(''); setErrorText(null); }} title="Scan to Check In">
         {(verifyState === 'idle' || verifyState === 'invalid') && !manualEntry && (
           <div>
             <p className="text-sm text-ink-dark-grey/70 tracking-tight mb-4">
@@ -262,7 +276,7 @@ export function ActivityDetail() {
             </p>
             <QrScanner onDetected={handleScan} paused={verifyState !== 'idle'} />
             {verifyState === 'invalid' && (
-              <p className="text-sm text-red-600 mt-3 tracking-tight text-center">That code doesn't match this activity. Try again.</p>
+              <p className="text-sm text-red-600 mt-3 tracking-tight text-center">{errorText}</p>
             )}
             <button
               onClick={() => setManualEntry(true)}
@@ -286,7 +300,7 @@ export function ActivityDetail() {
               className="w-full p-4 bg-ink-off-white border border-ink-light-grey rounded-2xl text-sm tracking-widest text-center font-mono uppercase focus:outline-none focus:border-ink-grey"
             />
             {verifyState === 'invalid' && (
-              <p className="text-sm text-red-600 mt-3 tracking-tight text-center">That code doesn't match this activity. Try again.</p>
+              <p className="text-sm text-red-600 mt-3 tracking-tight text-center">{errorText}</p>
             )}
             <Button fullWidth className="mt-4" onClick={handleManualSubmit}>
               Confirm attendance

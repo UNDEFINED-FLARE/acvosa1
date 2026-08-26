@@ -41,7 +41,7 @@ interface AppState {
   cancelReservation: (activityId: string) => Promise<void>;
   isReserved: (activityId: string) => boolean;
   hasAttended: (activityId: string) => boolean;
-  confirmAttendance: (activityId: string, code: string) => Promise<boolean>;
+  confirmAttendance: (activityId: string, code: string) => Promise<{ ok: boolean; error: string | null }>;
   fetchParticipants: (activityId: string) => Promise<Participant[]>;
   generateAttendanceCode: (activityId: string) => Promise<string | null>;
 
@@ -53,6 +53,7 @@ interface AppState {
   createActivity: (a: Omit<Activity, 'id' | 'reserved' | 'status' | 'attendedCount' | 'noShowCount' | 'attendanceCode'>) => Promise<void>;
   uploadActivityImage: (file: File) => Promise<string | null>;
   createProject: (p: Omit<Project, 'id'>) => Promise<void>;
+  uploadProjectEvidence: (projectId: string, file: File) => Promise<boolean>;
 
   toasts: Toast[];
   pushToast: (message: string, tone?: Toast['tone']) => void;
@@ -150,7 +151,8 @@ function mapProject(row: any): Project {
     phases: (row.project_phases ?? [])
       .sort((a: any, b: any) => a.position - b.position)
       .map((p: any) => ({ title: p.title, date: p.date, description: p.description, done: p.done })),
-    evidenceCount: row.evidence_count,
+    evidenceUrls: row.evidence_urls ?? [],
+    evidenceCount: (row.evidence_urls ?? []).length,
     documents: row.documents ?? [],
     results: row.results ?? [],
   };
@@ -365,11 +367,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.rpc('confirm_attendance', { p_activity_id: activityId, p_code: code });
       if (error) {
         pushToast(error.message, 'error');
-        return false;
+        return { ok: false, error: error.message };
       }
       await Promise.all([refetchAttendance(), refetchNotifications(), refetchActivities()]);
       pushToast('Attendance confirmed', 'success');
-      return true;
+      return { ok: true, error: null };
     },
     [pushToast, refetchAttendance, refetchNotifications, refetchActivities]
   );
@@ -476,6 +478,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [pushToast, refetchActivities]
   );
 
+  const uploadProjectEvidence = useCallback(
+    async (projectId: string, file: File) => {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${projectId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('project-evidence').upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      if (uploadError) {
+        pushToast(uploadError.message, 'error');
+        return false;
+      }
+      const { data } = supabase.storage.from('project-evidence').getPublicUrl(path);
+
+      const current = projects.find((p) => p.id === projectId);
+      const nextUrls = [...(current?.evidenceUrls ?? []), data.publicUrl];
+      const { error: updateError } = await supabase.from('projects').update({ evidence_urls: nextUrls }).eq('id', projectId);
+      if (updateError) {
+        pushToast(updateError.message, 'error');
+        return false;
+      }
+      await refetchProjects();
+      pushToast('Evidence uploaded', 'success');
+      return true;
+    },
+    [pushToast, projects, refetchProjects]
+  );
+
   const createProject = useCallback(
     async (p: Omit<Project, 'id'>) => {
       const { data, error } = await supabase
@@ -492,7 +522,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           sessions: p.sessions,
           satisfaction: p.satisfaction,
           community: p.community,
-          evidence_count: p.evidenceCount,
+          evidence_urls: p.evidenceUrls,
           documents: p.documents,
           results: p.results,
         })
@@ -543,6 +573,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     createActivity,
     uploadActivityImage,
     createProject,
+    uploadProjectEvidence,
     toasts,
     pushToast,
     dismissToast,

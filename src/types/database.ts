@@ -377,6 +377,7 @@ export type Database = {
           description: string | null
           documents: string[] | null
           evidence_count: number | null
+          evidence_urls: string[]
           id: string
           location: string | null
           objectives: string[] | null
@@ -396,6 +397,7 @@ export type Database = {
           description?: string | null
           documents?: string[] | null
           evidence_count?: number | null
+          evidence_urls?: string[]
           id?: string
           location?: string | null
           objectives?: string[] | null
@@ -415,6 +417,7 @@ export type Database = {
           description?: string | null
           documents?: string[] | null
           evidence_count?: number | null
+          evidence_urls?: string[]
           id?: string
           location?: string | null
           objectives?: string[] | null
