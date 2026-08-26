@@ -84,6 +84,11 @@ export function AdminAttendance() {
               <p className="text-xs text-ink-dark-grey/60 mt-1 tracking-tight max-w-sm">
                 Students can only mark attendance by scanning this code. Display it at the venue — regenerate it any time to invalidate the old one.
               </p>
+              {activity?.attendanceCode && (
+                <p className="text-xs font-mono tracking-widest text-ink-dark-grey/50 mt-2">
+                  Manual code: <span className="text-ink-charcoal font-semibold">{activity.attendanceCode}</span>
+                </p>
+              )}
               <Button variant="outline" size="sm" className="mt-3" onClick={handleGenerate} disabled={generating}>
                 <RefreshCw size={14} className={generating ? 'animate-spin' : ''} />
                 {activity?.attendanceCode ? 'Regenerate Code' : 'Generate Code'}

@@ -24,6 +24,8 @@ export function ActivityDetail() {
 
   const [verifyOpen, setVerifyOpen] = useState(false);
   const [verifyState, setVerifyState] = useState<VerifyState>('idle');
+  const [manualEntry, setManualEntry] = useState(false);
+  const [manualCode, setManualCode] = useState('');
 
   if (!activity) {
     return (
@@ -54,6 +56,14 @@ export function ActivityDetail() {
     setVerifyState('verifying');
     const ok = await confirmAttendance(activity.id, code);
     setVerifyState(ok ? 'confirmed' : 'idle');
+  };
+
+  const handleManualSubmit = async () => {
+    if (!manualCode.trim() || verifyState !== 'idle') return;
+    setVerifyState('verifying');
+    const ok = await confirmAttendance(activity.id, manualCode.trim());
+    setVerifyState(ok ? 'confirmed' : 'idle');
+    if (!ok) setManualCode('');
   };
 
   const attendanceMessage = () => {
@@ -244,8 +254,8 @@ export function ActivityDetail() {
       </div>
 
       {/* Attendance verification modal */}
-      <Modal open={verifyOpen} onClose={() => { setVerifyOpen(false); setVerifyState('idle'); }} title="Scan to Check In">
-        {(verifyState === 'idle' || verifyState === 'invalid') && (
+      <Modal open={verifyOpen} onClose={() => { setVerifyOpen(false); setVerifyState('idle'); setManualEntry(false); setManualCode(''); }} title="Scan to Check In">
+        {(verifyState === 'idle' || verifyState === 'invalid') && !manualEntry && (
           <div>
             <p className="text-sm text-ink-dark-grey/70 tracking-tight mb-4">
               Point your camera at the QR code the admin is displaying for this activity.
@@ -254,6 +264,39 @@ export function ActivityDetail() {
             {verifyState === 'invalid' && (
               <p className="text-sm text-red-600 mt-3 tracking-tight text-center">That code doesn't match this activity. Try again.</p>
             )}
+            <button
+              onClick={() => setManualEntry(true)}
+              className="w-full text-center text-xs text-ink-dark-grey/60 mt-4 tracking-tight underline underline-offset-2 hover:text-ink-charcoal"
+            >
+              Trouble scanning? Enter the code manually
+            </button>
+          </div>
+        )}
+
+        {(verifyState === 'idle' || verifyState === 'invalid') && manualEntry && (
+          <div>
+            <p className="text-sm text-ink-dark-grey/70 tracking-tight mb-4">
+              Ask the admin to read out the code shown below their QR image, then enter it here.
+            </p>
+            <input
+              autoFocus
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+              placeholder="e.g. A1B2C3D4"
+              className="w-full p-4 bg-ink-off-white border border-ink-light-grey rounded-2xl text-sm tracking-widest text-center font-mono uppercase focus:outline-none focus:border-ink-grey"
+            />
+            {verifyState === 'invalid' && (
+              <p className="text-sm text-red-600 mt-3 tracking-tight text-center">That code doesn't match this activity. Try again.</p>
+            )}
+            <Button fullWidth className="mt-4" onClick={handleManualSubmit}>
+              Confirm attendance
+            </Button>
+            <button
+              onClick={() => setManualEntry(false)}
+              className="w-full text-center text-xs text-ink-dark-grey/60 mt-4 tracking-tight underline underline-offset-2 hover:text-ink-charcoal"
+            >
+              Back to camera scan
+            </button>
           </div>
         )}
 

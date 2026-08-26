@@ -21,6 +21,7 @@ interface AuthState {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
+  signInWithMicrosoft: () => Promise<{ error: string | null }>;
   signUp: (params: {
     email: string;
     password: string;
@@ -104,6 +105,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
+  const signInWithMicrosoft: AuthState['signInWithMicrosoft'] = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        redirectTo: window.location.origin,
+        scopes: 'email',
+      },
+    });
+
+    return { error: error?.message ?? null };
+  };
+
   const signUp: AuthState['signUp'] = async ({
     email,
     password,
@@ -138,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         signIn,
         signInWithGoogle,
+        signInWithMicrosoft,
         signUp,
         signOut,
       }}

@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Loader2, ArrowRight } from 'lucide-react';
 
 export function Login() {
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInWithMicrosoft } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +14,7 @@ export function Login() {
   const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [microsoftLoading, setMicrosoftLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -25,6 +26,18 @@ export function Login() {
       setGoogleLoading(false);
     }
     // On success the browser redirects to Google, so no further state change here.
+  };
+
+  const handleMicrosoftSignIn = async () => {
+    setError(null);
+    setInfo(null);
+    setMicrosoftLoading(true);
+    const { error } = await signInWithMicrosoft();
+    if (error) {
+      setError(error);
+      setMicrosoftLoading(false);
+    }
+    // On success the browser redirects to Microsoft, so no further state change here.
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -157,6 +170,27 @@ export function Login() {
                   <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58Z" />
                 </svg>
                 Continue with Google
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleMicrosoftSignIn}
+            disabled={microsoftLoading}
+            className="w-full flex items-center justify-center gap-3 p-4 mt-3 bg-ink-white border border-ink-light-grey rounded-2xl shadow-soft hover:shadow-card hover:border-ink-grey transition-all duration-300 font-semibold tracking-tight text-ink-charcoal disabled:opacity-60"
+          >
+            {microsoftLoading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <path fill="#F25022" d="M1 1h7.6v7.6H1V1Z" />
+                  <path fill="#7FBA00" d="M9.4 1H17v7.6H9.4V1Z" />
+                  <path fill="#00A4EF" d="M1 9.4h7.6V17H1V9.4Z" />
+                  <path fill="#FFB900" d="M9.4 9.4H17V17H9.4V9.4Z" />
+                </svg>
+                Continue with Outlook
               </>
             )}
           </button>

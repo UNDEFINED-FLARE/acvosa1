@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import jsQR from 'jsqr';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface QrScannerProps {
@@ -8,33 +9,52 @@ interface QrScannerProps {
   paused?: boolean;
 }
 
-type CameraState = 'starting' | 'scanning' | 'unsupported' | 'denied' | 'error';
-
-// Not all browsers ship BarcodeDetector yet (notably Safari/iOS as of writing).
-declare global {
-  interface Window {
-    BarcodeDetector?: new (options: { formats: string[] }) => {
-      detect: (source: CanvasImageSource) => Promise<Array<{ rawValue: string }>>;
-    };
-  }
-}
+type CameraState = 'starting' | 'scanning' | 'denied' | 'unavailable' | 'insecure' | 'error';
 
 export function QrScanner({ onDetected, paused }: QrScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>();
+  const pausedRef = useRef(paused);
+  const lockedRef = useRef(false);
   const [state, setState] = useState<CameraState>('starting');
+
+  useEffect(() => {
+    pausedRef.current = paused;
+    // Once the parent un-pauses us again (e.g. after an invalid-code retry), release the lock.
+    if (!paused) lockedRef.current = false;
+  }, [paused]);
 
   useEffect(() => {
     let cancelled = false;
 
+    async function getStream(): Promise<MediaStream> {
+      const constraints = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } };
+      try {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err: any) {
+        // Some devices/browsers (most laptops, some Android WebViews) reject a
+        // constrained facingMode or resolution outright — retry with no constraints.
+        if (err?.name === 'OverconstrainedError' || err?.name === 'NotFoundError') {
+          return navigator.mediaDevices.getUserMedia({ video: true });
+        }
+        throw err;
+      }
+    }
+
     async function start() {
-      if (!window.BarcodeDetector) {
-        setState('unsupported');
+      if (window.isSecureContext === false) {
+        setState('insecure');
         return;
       }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setState('unavailable');
+        return;
+      }
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const stream = await getStream();
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
@@ -46,17 +66,28 @@ export function QrScanner({ onDetected, paused }: QrScannerProps) {
         }
         setState('scanning');
 
-        const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-        const tick = async () => {
+        const canvas = document.createElement('canvas');
+        canvasRef.current = canvas;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const MAX_DIM = 720; // downscale from full camera res — keeps jsQR fast and frame-rate smooth on low-end phones
+
+        const tick = () => {
           if (cancelled) return;
-          if (!paused && videoRef.current && videoRef.current.readyState >= 2) {
-            try {
-              const codes = await detector.detect(videoRef.current);
-              if (codes.length > 0) {
-                onDetected(codes[0].rawValue);
-              }
-            } catch {
-              // transient decode errors are expected between frames; ignore
+          const video = videoRef.current;
+          if (!pausedRef.current && !lockedRef.current && video && ctx && video.readyState >= video.HAVE_ENOUGH_DATA) {
+            const scale = Math.min(1, MAX_DIM / Math.max(video.videoWidth, video.videoHeight));
+            const w = Math.round(video.videoWidth * scale);
+            const h = Math.round(video.videoHeight * scale);
+            if (canvas.width !== w) canvas.width = w;
+            if (canvas.height !== h) canvas.height = h;
+            ctx.drawImage(video, 0, 0, w, h);
+            const frame = ctx.getImageData(0, 0, w, h);
+            const code = jsQR(frame.data, frame.width, frame.height, { inversionAttempts: 'attemptBoth' });
+            if (code?.data) {
+              // Lock immediately so we don't fire onDetected again on the next
+              // animation frame while the parent is still processing this scan.
+              lockedRef.current = true;
+              onDetected(code.data);
             }
           }
           rafRef.current = requestAnimationFrame(tick);
@@ -78,19 +109,21 @@ export function QrScanner({ onDetected, paused }: QrScannerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (state === 'unsupported' || state === 'denied' || state === 'error') {
+  if (state === 'unavailable' || state === 'denied' || state === 'error' || state === 'insecure') {
     return (
       <div className="w-full aspect-square rounded-2xl bg-ink-light-grey flex flex-col items-center justify-center gap-2 p-6 text-center">
         <AlertCircle size={28} className="text-ink-dark-grey/50" />
         <p className="text-sm font-medium text-ink-charcoal tracking-tight">
-          {state === 'unsupported' && "Your browser doesn't support QR scanning"}
+          {state === 'unavailable' && 'Camera access is not available in this browser'}
           {state === 'denied' && 'Camera access was denied'}
           {state === 'error' && "Couldn't start the camera"}
+          {state === 'insecure' && 'Camera requires a secure connection'}
         </p>
         <p className="text-xs text-ink-dark-grey/55 tracking-tight max-w-xs">
-          {state === 'unsupported'
-            ? 'Try Chrome or Edge on this device, or ask an admin to check you in manually.'
-            : 'Allow camera access and try again, or ask an admin to check you in manually.'}
+          {state === 'unavailable' && 'Try opening this page in a standard browser tab, or ask an admin to check you in manually.'}
+          {state === 'denied' && 'Allow camera access in your browser settings and try again, or ask an admin to check you in manually.'}
+          {state === 'error' && 'Try again, or ask an admin to check you in manually.'}
+          {state === 'insecure' && 'This page needs to be loaded over HTTPS (or localhost) for camera access to work. Ask an admin to check you in manually for now.'}
         </p>
       </div>
     );
@@ -108,3 +141,4 @@ export function QrScanner({ onDetected, paused }: QrScannerProps) {
     </div>
   );
 }
+
