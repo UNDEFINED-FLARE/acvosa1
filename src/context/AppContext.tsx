@@ -51,6 +51,7 @@ interface AppState {
   sendNotification: (n: { title: string; message: string; category?: AppNotification['category']; activityId?: string }) => Promise<void>;
 
   createActivity: (a: Omit<Activity, 'id' | 'reserved' | 'status' | 'attendedCount' | 'noShowCount' | 'attendanceCode'>) => Promise<void>;
+  uploadActivityImage: (file: File) => Promise<string | null>;
   createProject: (p: Omit<Project, 'id'>) => Promise<void>;
 
   toasts: Toast[];
@@ -91,6 +92,7 @@ function mapActivity(row: any): Activity {
     attendanceCode: row.attendance_code ?? null,
     requirements: row.requirements ?? [],
     imageSeed: row.image_seed ?? row.category?.toLowerCase(),
+    imageUrl: row.image_url ?? null,
     status: 'upcoming',
   });
 }
@@ -429,8 +431,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [pushToast]
   );
 
+  const uploadActivityImage = useCallback(
+    async (file: File) => {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from('activity-images').upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      if (error) {
+        pushToast(error.message, 'error');
+        return null;
+      }
+      const { data } = supabase.storage.from('activity-images').getPublicUrl(path);
+      return data.publicUrl;
+    },
+    [pushToast]
+  );
+
   const createActivity = useCallback(
-    async (a: Omit<Activity, 'id' | 'reserved' | 'status'>) => {
+    async (a: Omit<Activity, 'id' | 'reserved' | 'status' | 'attendedCount' | 'noShowCount' | 'attendanceCode'>) => {
       const { error } = await supabase.from('activities').insert({
         name: a.name,
         description: a.description,
@@ -444,6 +464,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         organizer: a.organizer,
         requirements: a.requirements,
         image_seed: a.imageSeed,
+        image_url: a.imageUrl ?? null,
       });
       if (error) {
         pushToast(error.message, 'error');
@@ -520,6 +541,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markRead,
     sendNotification,
     createActivity,
+    uploadActivityImage,
     createProject,
     toasts,
     pushToast,

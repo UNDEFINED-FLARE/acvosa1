@@ -80,7 +80,7 @@ export function ActivityDetail() {
     <PageContainer className="pb-28 lg:pb-10">
       {/* Hero */}
       <Card className="p-0 overflow-hidden" hover={false}>
-        <ActivityImage seed={activity.imageSeed} className="h-40 sm:h-56" />
+        <ActivityImage seed={activity.imageSeed} url={activity.imageUrl} className="h-40 sm:h-56" />
         <div className="p-5 sm:p-7">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="outline">{activity.category}</Badge>

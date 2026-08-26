@@ -24,6 +24,7 @@ export type Database = {
           end_time: string
           id: string
           image_seed: string | null
+          image_url: string | null
           name: string
           organizer: string | null
           registration_deadline: string | null
@@ -43,6 +44,7 @@ export type Database = {
           end_time: string
           id?: string
           image_seed?: string | null
+          image_url?: string | null
           name: string
           organizer?: string | null
           registration_deadline?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           end_time?: string
           id?: string
           image_seed?: string | null
+          image_url?: string | null
           name?: string
           organizer?: string | null
           registration_deadline?: string | null

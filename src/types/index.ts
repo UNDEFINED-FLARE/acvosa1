@@ -42,6 +42,7 @@ export interface Activity {
   attendanceCode: string | null;
   requirements: string[];
   imageSeed: string;
+  imageUrl: string | null;
   status: ActivityState;
 }
 

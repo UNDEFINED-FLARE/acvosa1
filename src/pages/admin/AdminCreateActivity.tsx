@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useNav } from '@/context/NavContext';
 import { PageContainer } from '@/components/layout/Topbar';
@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import type { ActivityCategory } from '@/types';
-import { ArrowLeft, Check, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Check, ImageIcon, Loader2, X } from 'lucide-react';
 
 const CATEGORIES: ActivityCategory[] = ['Workshops', 'Community', 'Academic', 'Leadership', 'Social', 'Volunteer'];
 
@@ -31,12 +31,36 @@ const initial: FormData = {
 };
 
 export function AdminCreateActivity() {
-  const { createActivity, pushToast } = useApp();
+  const { createActivity, uploadActivityImage, pushToast } = useApp();
   const { navigate } = useNav();
   const [form, setForm] = useState<FormData>(initial);
   const [requirementsList, setRequirementsList] = useState<string[]>([]);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const set = (key: keyof FormData, value: string) => setForm((f) => ({ ...f, [key]: value }));
+
+  const handleImageSelect = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      pushToast('Please choose an image file', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      pushToast('Image must be under 5MB', 'error');
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const addRequirement = () => {
     if (form.requirements.trim()) {
@@ -45,11 +69,20 @@ export function AdminCreateActivity() {
     }
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.name || !form.date || !form.venue) {
       pushToast('Please fill in all required fields', 'error');
       return;
     }
+
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      setUploading(true);
+      imageUrl = await uploadActivityImage(imageFile);
+      setUploading(false);
+      if (!imageUrl) return; // upload failed — error already toasted
+    }
+
     createActivity({
       name: form.name,
       description: form.description || 'ACVOSA activity — details to be announced.',
@@ -63,6 +96,7 @@ export function AdminCreateActivity() {
       requirements: requirementsList.length > 0 ? requirementsList : ['Valid student card'],
       organizer: form.organizer,
       imageSeed: form.category.toLowerCase(),
+      imageUrl,
     });
     navigate('admin-activities');
   };
@@ -166,11 +200,35 @@ export function AdminCreateActivity() {
         <div className="flex flex-col gap-5">
           <Card>
             <h2 className="text-base font-semibold text-ink-charcoal tracking-tight mb-4">Activity Image</h2>
-            <div className="aspect-video rounded-xl bg-gradient-to-br from-ink-light-grey to-ink-off-white border border-ink-light-grey flex flex-col items-center justify-center gap-2">
-              <ImageIcon size={28} className="text-ink-dark-grey/30" />
-              <p className="text-xs text-ink-dark-grey/45 tracking-tight">Image placeholder</p>
-            </div>
-            <p className="text-2xs text-ink-dark-grey/45 mt-2 tracking-tight">Upload an image when Firebase Storage is connected.</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleImageSelect(e.target.files?.[0])}
+            />
+            {imagePreview ? (
+              <div className="relative aspect-video rounded-xl overflow-hidden border border-ink-light-grey">
+                <img src={imagePreview} alt="Activity preview" className="w-full h-full object-cover" />
+                <button
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-ink-black/70 text-ink-white flex items-center justify-center hover:bg-ink-black"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full aspect-video rounded-xl bg-gradient-to-br from-ink-light-grey to-ink-off-white border border-dashed border-ink-light-grey flex flex-col items-center justify-center gap-2 hover:border-ink-grey transition-colors"
+              >
+                <ImageIcon size={28} className="text-ink-dark-grey/30" />
+                <p className="text-xs text-ink-dark-grey/45 tracking-tight">Click to upload an image</p>
+              </button>
+            )}
+            <p className="text-2xs text-ink-dark-grey/45 mt-2 tracking-tight">
+              JPG or PNG, up to 5MB. If skipped, a category icon is shown instead.
+            </p>
           </Card>
 
           <Card>
@@ -184,8 +242,9 @@ export function AdminCreateActivity() {
             </div>
           </Card>
 
-          <Button variant="primary" size="lg" fullWidth onClick={submit}>
-            <Check size={18} /> Publish Activity
+          <Button variant="primary" size="lg" fullWidth onClick={submit} disabled={uploading}>
+            {uploading ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+            {uploading ? 'Uploading image...' : 'Publish Activity'}
           </Button>
         </div>
       </div>

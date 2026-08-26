@@ -12,8 +12,17 @@ const ICONS: Record<string, LucideIcon> = {
   research: CalendarDays,
 };
 
-export function ActivityImage({ seed, className = '' }: { seed: string; className?: string }) {
+export function ActivityImage({ seed, url, className = '' }: { seed: string; url?: string | null; className?: string }) {
   const Icon = ICONS[seed] ?? CalendarDays;
+
+  if (url) {
+    return (
+      <div className={`relative overflow-hidden bg-ink-light-grey ${className}`}>
+        <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      </div>
+    );
+  }
+
   return (
     <div
       className={`relative overflow-hidden bg-gradient-to-br from-ink-light-grey to-ink-off-white flex items-center justify-center ${className}`}
