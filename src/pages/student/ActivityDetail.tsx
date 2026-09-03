@@ -17,6 +17,24 @@ import {
 
 type VerifyState = 'idle' | 'verifying' | 'confirmed' | 'invalid';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Attendance QR payloads look like `<PREFIX>:<activityId>:<code>`.
+ *
+ * The prefix is cosmetic — the server is what actually verifies the code
+ * against the activity — so match on shape rather than on the prefix text.
+ * Matching the literal prefix meant a scanner and an admin screen running
+ * different builds (the prefix was renamed) rejected every scan as "not for
+ * this activity", even though the code was perfectly valid.
+ */
+function parseAttendanceQr(raw: string): { activityId: string | null; code: string } | null {
+  const parts = raw.trim().split(':').map((s) => s.trim()).filter(Boolean);
+  const code = parts[parts.length - 1];
+  if (!code) return null;
+  return { activityId: parts.find((p) => UUID_RE.test(p)) ?? null, code };
+}
+
 export function ActivityDetail() {
   const { activities, isReserved, reservePlace, cancelReservation, hasAttended, confirmAttendance, attendanceRecords } = useApp();
   const { params, navigate } = useNav();
@@ -46,17 +64,32 @@ export function ActivityDetail() {
   const isActive = activity.status === 'active';
   const isCompleted = activity.status === 'completed';
 
+  const failScan = (message: string) => {
+    setErrorText(message);
+    setVerifyState('invalid');
+    window.setTimeout(() => setVerifyState('idle'), 2200);
+  };
+
   const handleScan = async (raw: string) => {
     if (verifyState !== 'idle') return;
-    const [prefix, scannedActivityId, code] = raw.trim().split(':').map((s) => s?.trim());
-    if (prefix?.toUpperCase() !== 'IRD' || scannedActivityId !== activity.id || !code) {
-      setErrorText("That QR code isn't for this activity. Make sure you're scanning the code the admin has on screen right now.");
-      setVerifyState('invalid');
-      window.setTimeout(() => setVerifyState('idle'), 2200);
+    const parsed = parseAttendanceQr(raw);
+    if (!parsed) {
+      failScan("That doesn't look like an attendance code. Scan the QR the admin has on screen, or use manual entry below.");
+      return;
+    }
+    // Only reject outright when the code names a *different* activity we know about.
+    // Anything else goes to the server, which is the real authority on the code.
+    if (parsed.activityId && parsed.activityId !== activity.id) {
+      const other = activities.find((a) => a.id === parsed.activityId);
+      failScan(
+        other
+          ? `That code is for “${other.name}”, not this activity.`
+          : "That QR code belongs to a different activity."
+      );
       return;
     }
     setVerifyState('verifying');
-    const { ok, error } = await confirmAttendance(activity.id, code);
+    const { ok, error } = await confirmAttendance(activity.id, parsed.code);
     if (ok) {
       setVerifyState('confirmed');
     } else {
