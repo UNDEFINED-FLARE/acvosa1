@@ -58,7 +58,7 @@ interface AppState {
 
   createActivity: (a: Omit<Activity, 'id' | 'reserved' | 'status' | 'attendedCount' | 'noShowCount' | 'attendanceCode'>) => Promise<void>;
   uploadActivityImage: (file: File) => Promise<string | null>;
-  createProject: (p: Omit<Project, 'id'>) => Promise<void>;
+  createProject: (p: Omit<Project, 'id' | 'evidenceCount'>) => Promise<void>;
   uploadProjectEvidence: (projectId: string, file: File) => Promise<boolean>;
 
   toasts: Toast[];
@@ -569,7 +569,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const createProject = useCallback(
-    async (p: Omit<Project, 'id'>) => {
+    // evidenceCount is derived from evidence_urls on read, so callers don't supply it.
+    async (p: Omit<Project, 'id' | 'evidenceCount'>) => {
       const { data, error } = await supabase
         .from('projects')
         .insert({

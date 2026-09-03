@@ -609,6 +609,7 @@ export type Database = {
           description: string
           documents: string[]
           evidence_count: number
+          evidence_urls: string[]
           id: string
           location: string
           objectives: string[]
@@ -628,6 +629,7 @@ export type Database = {
           description?: string
           documents?: string[]
           evidence_count?: number
+          evidence_urls?: string[]
           id?: string
           location: string
           objectives?: string[]
@@ -647,6 +649,7 @@ export type Database = {
           description?: string
           documents?: string[]
           evidence_count?: number
+          evidence_urls?: string[]
           id?: string
           location?: string
           objectives?: string[]

@@ -72,11 +72,3 @@ export function ErrorState({ title = 'Something went wrong', message, onRetry, c
     </div>
   );
 }
-
-export function DemoModeBanner() {
-  return (
-    <div className="bg-ink-charcoal text-ink-white text-center py-1.5 text-2xs font-medium tracking-tight">
-      Demo Mode — Data is not being saved to Firebase. Configure .env to enable persistence.
-    </div>
-  );
-}
