@@ -23,7 +23,6 @@ import { ProfilePage } from '@/pages/student/ProfilePage';
 // Institute pages (shared by both roles)
 import { UnitsPage } from '@/pages/institute/UnitsPage';
 import { UnitDetail } from '@/pages/institute/UnitDetail';
-import { StakeholdersPage } from '@/pages/institute/StakeholdersPage';
 
 // Admin pages
 import { AdminDashboard } from '@/pages/admin/AdminDashboard';
@@ -43,7 +42,7 @@ import { AdminVenues } from '@/pages/admin/AdminVenues';
 function StudentRouter() {
   const { route } = useNav();
 
-  const detailRoutes = new Set(['activity-detail', 'project-detail', 'reservations', 'notifications', 'impact', 'history', 'profile', 'attendance', 'units', 'unit-detail', 'stakeholders']);
+  const detailRoutes = new Set(['activity-detail', 'project-detail', 'reservations', 'notifications', 'impact', 'history', 'profile', 'attendance', 'units', 'unit-detail']);
   const showTopbar = detailRoutes.has(route) || route === 'activities';
 
   return (
@@ -75,7 +74,6 @@ function renderStudent(route: string) {
     case 'profile': return <ProfilePage />;
     case 'units': return <UnitsPage />;
     case 'unit-detail': return <UnitDetail />;
-    case 'stakeholders': return <StakeholdersPage />;
     default: return <StudentDashboard />;
   }
 }
@@ -116,7 +114,6 @@ function renderAdmin(route: string) {
     case 'admin-settings': return <AdminSettings />;
     case 'units': return <UnitsPage />;
     case 'unit-detail': return <UnitDetail />;
-    case 'stakeholders': return <StakeholdersPage />;
     default: return <AdminDashboard />;
   }
 }

@@ -12,7 +12,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Shelf, ShelfItem } from '@/components/ui/Shelf';
 import { ActivityCard } from '@/components/student/ActivityCard';
 import { RegisterReportCard } from '@/components/institute/RegisterReportCard';
-import { StakeholderCard } from '@/components/institute/StakeholderCard';
 import { UNIT_STAFF_CATEGORIES, type UnitStaff, type UnitStaffCategory } from '@/types';
 import { initials } from '@/utils/format';
 import { ArrowLeft, Mail, Network, UserRound, Plus, Pencil, Trash2 } from 'lucide-react';
@@ -37,7 +36,7 @@ const toStaffDraft = (s: UnitStaff): StaffDraft => ({
 });
 
 export function UnitDetail() {
-  const { units, unitStaff, stakeholders, activities, role, saveUnitStaff, deleteUnitStaff, pushToast } = useApp();
+  const { units, unitStaff, activities, role, saveUnitStaff, deleteUnitStaff, pushToast } = useApp();
   const { params, navigate, back } = useNav();
   const [draft, setDraft] = useState<StaffDraft | null>(null);
   const [saving, setSaving] = useState(false);
@@ -60,7 +59,6 @@ export function UnitDetail() {
   }
 
   const staff = unitStaff.filter((s) => s.unitId === unit.id);
-  const unitStakeholders = stakeholders.filter((s) => s.unitId === unit.id);
   const unitActivities = activities.filter((a) => {
     const organizer = a.organizer.toLowerCase();
     return organizer === unit.name.toLowerCase() || organizer.includes(unit.shortName.toLowerCase());
@@ -228,36 +226,6 @@ export function UnitDetail() {
             registers.map((a) => (
               <ShelfItem key={a.id}>
                 <RegisterReportCard activity={a} onOpen={() => openRegister(a.id)} />
-              </ShelfItem>
-            ))
-          )}
-        </Shelf>
-      </div>
-
-      {/* Stakeholders shelf */}
-      <div className="mt-10">
-        <Shelf
-          title="External relationships"
-          subtitle="Stakeholders this unit works with."
-          action={
-            <button
-              onClick={() => navigate('stakeholders')}
-              className="text-sm text-ink-dark-grey/70 hover:text-ink-charcoal transition-colors tracking-tight"
-            >
-              View all
-            </button>
-          }
-        >
-          {unitStakeholders.length === 0 ? (
-            <ShelfItem className="w-full">
-              <Card hover={false} className="text-sm text-ink-dark-grey/60 tracking-tight">
-                No stakeholders are linked to this unit yet.
-              </Card>
-            </ShelfItem>
-          ) : (
-            unitStakeholders.map((s) => (
-              <ShelfItem key={s.id}>
-                <StakeholderCard stakeholder={s} unitName={unit.shortName} />
               </ShelfItem>
             ))
           )}

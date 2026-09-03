@@ -232,24 +232,3 @@ export interface UnitStaff {
   status: 'active' | 'inactive';
 }
 
-export type StakeholderType =
-  | 'Government'
-  | 'Academic'
-  | 'NGO'
-  | 'Industry'
-  | 'Funder'
-  | 'Community'
-  | 'International';
-
-export interface Stakeholder {
-  id: string;
-  name: string;
-  type: StakeholderType;
-  relationship: string;
-  focus: string;
-  contactPerson: string;
-  contactEmail: string;
-  since: string;
-  status: 'active' | 'pending' | 'dormant';
-  unitId: string | null;
-}

@@ -16,7 +16,6 @@ export type Route =
   // institute (shared by both roles)
   | 'units'
   | 'unit-detail'
-  | 'stakeholders'
   // admin
   | 'admin-dashboard'
   | 'admin-activities'

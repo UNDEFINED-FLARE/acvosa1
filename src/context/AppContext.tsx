@@ -11,7 +11,6 @@ import type {
   Project,
   Reservation,
   Role,
-  Stakeholder,
   Unit,
   UnitStaff,
   User,
@@ -42,7 +41,6 @@ interface AppState {
   history: HistoryEvent[];
   units: Unit[];
   unitStaff: UnitStaff[];
-  stakeholders: Stakeholder[];
   venues: Venue[];
 
   saveVenue: (v: Omit<Venue, 'id'> & { id?: string }) => Promise<boolean>;
@@ -52,8 +50,6 @@ interface AppState {
   deleteUnit: (id: string) => Promise<boolean>;
   saveUnitStaff: (s: Omit<UnitStaff, 'id'> & { id?: string }) => Promise<boolean>;
   deleteUnitStaff: (id: string) => Promise<boolean>;
-  saveStakeholder: (s: Omit<Stakeholder, 'id'> & { id?: string }) => Promise<boolean>;
-  deleteStakeholder: (id: string) => Promise<boolean>;
 
   reservePlace: (activityId: string) => Promise<void>;
   cancelReservation: (activityId: string) => Promise<void>;
@@ -241,21 +237,6 @@ function mapVenue(row: any): Venue {
   };
 }
 
-function mapStakeholder(row: any): Stakeholder {
-  return {
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    relationship: row.relationship ?? '',
-    focus: row.focus ?? '',
-    contactPerson: row.contact_person ?? '',
-    contactEmail: row.contact_email ?? '',
-    since: row.since ?? '',
-    status: row.status,
-    unitId: row.unit_id ?? null,
-  };
-}
-
 const EMPTY_IMPACT: ImpactSnapshot = {
   year: '—',
   activities: 0,
@@ -278,7 +259,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<HistoryEvent[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [unitStaff, setUnitStaff] = useState<UnitStaff[]>([]);
-  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [impact, setImpact] = useState<ImpactSnapshot>(EMPTY_IMPACT);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -375,14 +355,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refetchOrganisation = useCallback(async () => {
-    const [unitsRes, staffRes, stakeholdersRes] = await Promise.all([
+    const [unitsRes, staffRes] = await Promise.all([
       supabase.from('units').select('*').order('position', { ascending: true }),
       supabase.from('unit_staff').select('*').order('position', { ascending: true }),
-      supabase.from('stakeholders').select('*').order('name', { ascending: true }),
     ]);
     if (!unitsRes.error && unitsRes.data) setUnits(unitsRes.data.map(mapUnit));
     if (!staffRes.error && staffRes.data) setUnitStaff(staffRes.data.map(mapUnitStaff));
-    if (!stakeholdersRes.error && stakeholdersRes.data) setStakeholders(stakeholdersRes.data.map(mapStakeholder));
   }, []);
 
   const saveVenue = useCallback(
@@ -439,7 +417,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteUnit = useCallback(
     async (id: string) => {
-      // unit_staff cascades; stakeholders fall back to institute-wide.
+      // unit_staff rows cascade with the unit.
       const { error } = await supabase.from('units').delete().eq('id', id);
       if (error) {
         pushToast(error.message, 'error');
@@ -488,49 +466,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       await refetchOrganisation();
       pushToast('Person removed', 'info');
-      return true;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [refetchOrganisation]
-  );
-
-  const saveStakeholder = useCallback(
-    async (s: Omit<Stakeholder, 'id'> & { id?: string }) => {
-      const payload = {
-        name: s.name,
-        type: s.type,
-        relationship: s.relationship,
-        focus: s.focus,
-        contact_person: s.contactPerson,
-        contact_email: s.contactEmail,
-        since: s.since,
-        status: s.status,
-        unit_id: s.unitId,
-      };
-      const { error } = s.id
-        ? await supabase.from('stakeholders').update(payload).eq('id', s.id)
-        : await supabase.from('stakeholders').insert(payload);
-      if (error) {
-        pushToast(error.message, 'error');
-        return false;
-      }
-      await refetchOrganisation();
-      pushToast(s.id ? `${s.name} updated` : `${s.name} added`, 'success');
-      return true;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [refetchOrganisation]
-  );
-
-  const deleteStakeholder = useCallback(
-    async (id: string) => {
-      const { error } = await supabase.from('stakeholders').delete().eq('id', id);
-      if (error) {
-        pushToast(error.message, 'error');
-        return false;
-      }
-      await refetchOrganisation();
-      pushToast('Stakeholder removed', 'info');
       return true;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -849,7 +784,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     history,
     units,
     unitStaff,
-    stakeholders,
     venues,
     saveVenue,
     deleteVenue,
@@ -857,8 +791,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteUnit,
     saveUnitStaff,
     deleteUnitStaff,
-    saveStakeholder,
-    deleteStakeholder,
     reservePlace,
     cancelReservation,
     isReserved,
