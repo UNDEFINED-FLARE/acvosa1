@@ -43,8 +43,15 @@ export interface Activity {
   requirements: string[];
   imageSeed: string;
   imageUrl: string | null;
+  /** Venue coordinates. When set, check-in is geofenced to this point. */
+  venueLat: number | null;
+  venueLng: number | null;
+  geofenceRadiusM: number;
   status: ActivityState;
 }
+
+/** Main campus, University of Venda — Thohoyandou, Limpopo. */
+export const UNIVEN_CAMPUS = { lat: -22.975556, lng: 30.444444 } as const;
 
 export interface Deadline {
   id: string;
@@ -61,6 +68,8 @@ export interface AttendanceRecord {
   date: string;
   checkInTime: string;
   status: AttendanceStatus;
+  /** Distance from the venue at check-in, when the activity was geofenced. */
+  checkInDistanceM: number | null;
 }
 
 export interface Reservation {

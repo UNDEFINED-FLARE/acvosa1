@@ -8,11 +8,13 @@ import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { Modal } from '@/components/ui/Modal';
 import { ActivityImage } from '@/components/ui/ActivityImage';
+import { VenueMap, distanceMetres } from '@/components/ui/VenueMap';
 import { QrScanner } from '@/components/student/QrScanner';
+import { useGeolocation } from '@/hooks/useGeolocation';
 import { formatDate, daysUntil } from '@/utils/format';
 import {
   Calendar, Clock, MapPin, Check, QrCode,
-  ShieldCheck, Loader2, Lock, AlertCircle,
+  ShieldCheck, Loader2, Lock, AlertCircle, LocateFixed,
 } from 'lucide-react';
 
 type VerifyState = 'idle' | 'verifying' | 'confirmed' | 'invalid';
@@ -46,6 +48,14 @@ export function ActivityDetail() {
   const [manualCode, setManualCode] = useState('');
   const [errorText, setErrorText] = useState<string | null>(null);
 
+  const venue =
+    activity?.venueLat != null && activity?.venueLng != null
+      ? { lat: activity.venueLat, lng: activity.venueLng }
+      : null;
+  // Must stay above the early return below — hooks cannot be called conditionally.
+  // Only asks for location while the check-in sheet is actually open.
+  const geo = useGeolocation(verifyOpen && !!venue);
+
   if (!activity) {
     return (
       <PageContainer>
@@ -63,6 +73,13 @@ export function ActivityDetail() {
   const attendedRecord = attendanceRecords.find((r) => r.activityId === activity.id && r.status === 'present');
   const isActive = activity.status === 'active';
   const isCompleted = activity.status === 'completed';
+
+  const distanceM = venue && geo.position ? distanceMetres(venue, geo.position) : null;
+  // Mirrors the server's allowance so the UI doesn't promise something the
+  // database will refuse (and vice versa).
+  const allowanceM = venue ? activity.geofenceRadiusM + Math.min(geo.position?.accuracyM ?? 0, 100) : 0;
+  const insideFence = distanceM != null && distanceM <= allowanceM;
+  const locationBlocked = !!venue && !insideFence;
 
   const failScan = (message: string) => {
     setErrorText(message);
@@ -88,8 +105,12 @@ export function ActivityDetail() {
       );
       return;
     }
+    if (venue && !geo.position) {
+      failScan(geo.error ?? 'Waiting for your location — allow location access to check in at this venue.');
+      return;
+    }
     setVerifyState('verifying');
-    const { ok, error } = await confirmAttendance(activity.id, parsed.code);
+    const { ok, error } = await confirmAttendance(activity.id, parsed.code, geo.position);
     if (ok) {
       setVerifyState('confirmed');
     } else {
@@ -101,8 +122,12 @@ export function ActivityDetail() {
 
   const handleManualSubmit = async () => {
     if (!manualCode.trim() || verifyState !== 'idle') return;
+    if (venue && !geo.position) {
+      failScan(geo.error ?? 'Waiting for your location — allow location access to check in at this venue.');
+      return;
+    }
     setVerifyState('verifying');
-    const { ok, error } = await confirmAttendance(activity.id, manualCode.trim());
+    const { ok, error } = await confirmAttendance(activity.id, manualCode.trim(), geo.position);
     if (ok) {
       setVerifyState('confirmed');
     } else {
@@ -296,6 +321,24 @@ export function ActivityDetail() {
               <QrCode size={18} className="text-ink-dark-grey/60 shrink-0" />
               <span className="text-sm text-ink-dark-grey/80 tracking-tight">Scan the QR code displayed by the admin at the activity</span>
             </div>
+
+            {venue && (
+              <>
+                <div className="mt-2 flex items-center gap-3 p-3 rounded-xl bg-ink-off-white">
+                  <LocateFixed size={18} className="text-ink-dark-grey/60 shrink-0" />
+                  <span className="text-sm text-ink-dark-grey/80 tracking-tight">
+                    Location verified — you must be within {activity.geofenceRadiusM} m of the venue
+                  </span>
+                </div>
+                <div className="mt-4">
+                  <VenueMap venue={venue} radiusM={activity.geofenceRadiusM} className="h-56" />
+                  <p className="text-xs text-ink-dark-grey/55 mt-2 tracking-tight flex items-start gap-1.5">
+                    <MapPin size={12} className="mt-0.5 shrink-0" />
+                    {activity.venue} — check-in is accepted anywhere inside the shaded circle.
+                  </p>
+                </div>
+              </>
+            )}
           </Card>
         </div>
       </div>
@@ -307,7 +350,50 @@ export function ActivityDetail() {
             <p className="text-sm text-ink-dark-grey/70 tracking-tight mb-4">
               Point your camera at the QR code the admin is displaying for this activity.
             </p>
-            <QrScanner onDetected={handleScan} paused={verifyState !== 'idle'} />
+
+            {venue && (
+              <div className="mb-4">
+                <VenueMap
+                  venue={venue}
+                  radiusM={activity.geofenceRadiusM}
+                  position={geo.position}
+                  className="h-44"
+                />
+                <div
+                  className={`mt-2 flex items-start gap-2 p-3 rounded-xl text-sm tracking-tight ${
+                    insideFence
+                      ? 'bg-ink-light-grey text-ink-charcoal'
+                      : geo.status === 'ready'
+                        ? 'bg-red-50 text-red-700'
+                        : 'bg-ink-off-white text-ink-dark-grey/75'
+                  }`}
+                >
+                  {insideFence ? (
+                    <Check size={16} className="mt-0.5 shrink-0" />
+                  ) : geo.status === 'locating' ? (
+                    <Loader2 size={16} className="mt-0.5 shrink-0 animate-spin-slow" />
+                  ) : (
+                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  )}
+                  <span>
+                    {geo.status === 'locating' && 'Finding your location…'}
+                    {geo.status === 'ready' && distanceM != null && (
+                      insideFence
+                        ? `You're at the venue — ${Math.round(distanceM)} m from the centre.`
+                        : `You're ${Math.round(distanceM)} m away, outside the ${activity.geofenceRadiusM} m check-in area.`
+                    )}
+                    {(geo.status === 'denied' || geo.status === 'error' || geo.status === 'unavailable' || geo.status === 'insecure') && geo.error}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <QrScanner onDetected={handleScan} paused={verifyState !== 'idle' || locationBlocked} />
+            {locationBlocked && geo.status === 'ready' && (
+              <p className="text-xs text-ink-dark-grey/60 mt-2 tracking-tight text-center">
+                Scanning resumes once you're inside the check-in area.
+              </p>
+            )}
             {verifyState === 'invalid' && (
               <p className="text-sm text-red-600 mt-3 tracking-tight text-center">{errorText}</p>
             )}

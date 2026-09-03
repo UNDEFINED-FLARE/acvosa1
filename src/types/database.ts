@@ -34,6 +34,9 @@ export type Database = {
           requirements: string[]
           start_time: string
           venue: string
+          venue_lat: number | null
+          venue_lng: number | null
+          geofence_radius_m: number
         }
         Insert: {
           attendance_code?: string | null
@@ -54,6 +57,9 @@ export type Database = {
           requirements?: string[]
           start_time: string
           venue: string
+          venue_lat?: number | null
+          venue_lng?: number | null
+          geofence_radius_m?: number
         }
         Update: {
           attendance_code?: string | null
@@ -74,6 +80,9 @@ export type Database = {
           requirements?: string[]
           start_time?: string
           venue?: string
+          venue_lat?: number | null
+          venue_lng?: number | null
+          geofence_radius_m?: number
         }
         Relationships: [
           {
@@ -100,6 +109,9 @@ export type Database = {
           id: string
           status: Database["public"]["Enums"]["attendance_status"]
           user_id: string
+          check_in_lat: number | null
+          check_in_lng: number | null
+          check_in_distance_m: number | null
         }
         Insert: {
           activity_id: string
@@ -108,6 +120,9 @@ export type Database = {
           id?: string
           status?: Database["public"]["Enums"]["attendance_status"]
           user_id: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_in_distance_m?: number | null
         }
         Update: {
           activity_id?: string
@@ -116,6 +131,9 @@ export type Database = {
           id?: string
           status?: Database["public"]["Enums"]["attendance_status"]
           user_id?: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_in_distance_m?: number | null
         }
         Relationships: [
           {
@@ -932,6 +950,10 @@ export type Database = {
           reserved: number | null
           start_time: string | null
           venue: string | null
+          venue_lat: number | null
+          venue_lng: number | null
+          geofence_radius_m: number | null
+          image_url: string | null
         }
         Relationships: [
           {
@@ -992,8 +1014,23 @@ export type Database = {
         Args: { p_activity_id: string }
         Returns: undefined
       }
+      geo_distance_m: {
+        Args: {
+          lat1: number
+          lng1: number
+          lat2: number
+          lng2: number
+        }
+        Returns: number
+      }
       confirm_attendance: {
-        Args: { p_activity_id: string; p_code: string }
+        Args: {
+          p_activity_id: string
+          p_code: string
+          p_lat?: number
+          p_lng?: number
+          p_accuracy_m?: number
+        }
         Returns: {
           activity_id: string
           check_in_time: string

@@ -5,8 +5,10 @@ import { PageContainer } from '@/components/layout/Topbar';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { VenueMap, type LatLng } from '@/components/ui/VenueMap';
 import type { ActivityCategory } from '@/types';
-import { ArrowLeft, Check, ImageIcon, Loader2, X } from 'lucide-react';
+import { UNIVEN_CAMPUS } from '@/types';
+import { ArrowLeft, Check, ImageIcon, Loader2, X, LocateFixed } from 'lucide-react';
 
 const CATEGORIES: ActivityCategory[] = ['Workshops', 'Community', 'Academic', 'Leadership', 'Social', 'Volunteer'];
 
@@ -22,12 +24,14 @@ interface FormData {
   registrationDeadline: string;
   requirements: string;
   organizer: string;
+  geofenceRadius: string;
 }
 
 const initial: FormData = {
   name: '', description: '', category: 'Workshops', date: '', startTime: '09:00', endTime: '12:00',
   venue: '', capacity: '50', registrationDeadline: '',
   requirements: '', organizer: 'Institute for Rural Development',
+  geofenceRadius: '250',
 };
 
 export function AdminCreateActivity() {
@@ -38,6 +42,9 @@ export function AdminCreateActivity() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Defaults to the UNIVEN main campus; admins drag or click to place the venue.
+  const [geofenceOn, setGeofenceOn] = useState(true);
+  const [venuePoint, setVenuePoint] = useState<LatLng>({ ...UNIVEN_CAMPUS });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const set = (key: keyof FormData, value: string) => setForm((f) => ({ ...f, [key]: value }));
@@ -97,6 +104,9 @@ export function AdminCreateActivity() {
       organizer: form.organizer,
       imageSeed: form.category.toLowerCase(),
       imageUrl,
+      venueLat: geofenceOn ? venuePoint.lat : null,
+      venueLng: geofenceOn ? venuePoint.lng : null,
+      geofenceRadiusM: Math.min(5000, Math.max(25, parseInt(form.geofenceRadius, 10) || 250)),
     });
     navigate('admin-activities');
   };
@@ -171,6 +181,70 @@ export function AdminCreateActivity() {
                 <label className={label}>Registration deadline</label>
                 <input type="date" className={field} value={form.registrationDeadline} onChange={(e) => set('registrationDeadline', e.target.value)} />
               </div>
+            </div>
+
+            {/* Geofence */}
+            <div className="mt-6 pt-5 border-t border-ink-light-grey">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-ink-charcoal tracking-tight flex items-center gap-2">
+                    <LocateFixed size={15} /> Location check-in
+                  </h3>
+                  <p className="text-xs text-ink-dark-grey/60 mt-1 tracking-tight max-w-sm">
+                    Students must be inside this circle to mark attendance. Click the map or drag the pin
+                    to place the venue.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={geofenceOn}
+                  onClick={() => setGeofenceOn((v) => !v)}
+                  className={`shrink-0 w-11 h-6 rounded-full transition-colors relative ${geofenceOn ? 'bg-ink-black' : 'bg-ink-grey'}`}
+                >
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink-white transition-all ${geofenceOn ? 'left-[22px]' : 'left-0.5'}`}
+                  />
+                </button>
+              </div>
+
+              {geofenceOn && (
+                <div className="mt-4">
+                  <VenueMap
+                    venue={venuePoint}
+                    radiusM={Math.min(5000, Math.max(25, parseInt(form.geofenceRadius, 10) || 250))}
+                    editable
+                    onVenueChange={setVenuePoint}
+                    className="h-64"
+                  />
+                  <div className="mt-3 grid sm:grid-cols-2 gap-4 items-end">
+                    <div>
+                      <label className={label}>Check-in radius (metres)</label>
+                      <input
+                        type="number"
+                        className={field}
+                        value={form.geofenceRadius}
+                        onChange={(e) => set('geofenceRadius', e.target.value)}
+                        min={25}
+                        max={5000}
+                        step={25}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs text-ink-dark-grey/55 tracking-tight tabular-nums">
+                        {venuePoint.lat.toFixed(5)}, {venuePoint.lng.toFixed(5)}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setVenuePoint({ ...UNIVEN_CAMPUS })}
+                        className="text-xs text-ink-dark-grey/70 hover:text-ink-charcoal underline underline-offset-2 tracking-tight shrink-0"
+                      >
+                        Reset to campus
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
 

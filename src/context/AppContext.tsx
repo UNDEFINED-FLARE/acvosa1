@@ -47,7 +47,11 @@ interface AppState {
   cancelReservation: (activityId: string) => Promise<void>;
   isReserved: (activityId: string) => boolean;
   hasAttended: (activityId: string) => boolean;
-  confirmAttendance: (activityId: string, code: string) => Promise<{ ok: boolean; error: string | null }>;
+  confirmAttendance: (
+    activityId: string,
+    code: string,
+    position?: { lat: number; lng: number; accuracyM?: number } | null
+  ) => Promise<{ ok: boolean; error: string | null }>;
   fetchParticipants: (activityId: string) => Promise<Participant[]>;
   generateAttendanceCode: (activityId: string) => Promise<string | null>;
 
@@ -100,6 +104,9 @@ function mapActivity(row: any): Activity {
     requirements: row.requirements ?? [],
     imageSeed: row.image_seed ?? row.category?.toLowerCase(),
     imageUrl: row.image_url ?? null,
+    venueLat: row.venue_lat ?? null,
+    venueLng: row.venue_lng ?? null,
+    geofenceRadiusM: row.geofence_radius_m ?? 250,
     status: 'upcoming',
   });
 }
@@ -124,6 +131,7 @@ function mapAttendance(row: any, activityName: string, date: string): Attendance
     date,
     checkInTime: row.check_in_time,
     status: row.status,
+    checkInDistanceM: row.check_in_distance_m ?? null,
   };
 }
 
@@ -425,8 +433,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const confirmAttendance = useCallback(
-    async (activityId: string, code: string) => {
-      const { error } = await supabase.rpc('confirm_attendance', { p_activity_id: activityId, p_code: code });
+    async (activityId: string, code: string, position?: { lat: number; lng: number; accuracyM?: number } | null) => {
+      const { error } = await supabase.rpc('confirm_attendance', {
+        p_activity_id: activityId,
+        p_code: code,
+        p_lat: position?.lat,
+        p_lng: position?.lng,
+        p_accuracy_m: position?.accuracyM,
+      });
       if (error) {
         pushToast(error.message, 'error');
         return { ok: false, error: error.message };
@@ -529,6 +543,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         requirements: a.requirements,
         image_seed: a.imageSeed,
         image_url: a.imageUrl ?? null,
+        venue_lat: a.venueLat,
+        venue_lng: a.venueLng,
+        geofence_radius_m: a.geofenceRadiusM,
       });
       if (error) {
         pushToast(error.message, 'error');
