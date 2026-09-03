@@ -1157,6 +1157,7 @@ export type Database = {
       unit_staff_category:
         | "Permanent Staff"
         | "Postgraduate Committee"
+        | "ACVOSA"
         | "Innovation Champion"
         | "Graduate Trainee"
         | "Intern"
@@ -1325,6 +1326,7 @@ export const Constants = {
       unit_staff_category: [
         "Permanent Staff",
         "Postgraduate Committee",
+        "ACVOSA",
         "Innovation Champion",
         "Graduate Trainee",
         "Intern",

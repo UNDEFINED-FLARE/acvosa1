@@ -48,6 +48,13 @@ interface AppState {
   saveVenue: (v: Omit<Venue, 'id'> & { id?: string }) => Promise<boolean>;
   deleteVenue: (id: string) => Promise<boolean>;
 
+  saveUnit: (u: Omit<Unit, 'id'> & { id?: string }) => Promise<boolean>;
+  deleteUnit: (id: string) => Promise<boolean>;
+  saveUnitStaff: (s: Omit<UnitStaff, 'id'> & { id?: string }) => Promise<boolean>;
+  deleteUnitStaff: (id: string) => Promise<boolean>;
+  saveStakeholder: (s: Omit<Stakeholder, 'id'> & { id?: string }) => Promise<boolean>;
+  deleteStakeholder: (id: string) => Promise<boolean>;
+
   reservePlace: (activityId: string) => Promise<void>;
   cancelReservation: (activityId: string) => Promise<void>;
   isReserved: (activityId: string) => boolean;
@@ -404,6 +411,132 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [refetchVenues, refetchActivities]
   );
 
+  const saveUnit = useCallback(
+    async (u: Omit<Unit, 'id'> & { id?: string }) => {
+      const payload = {
+        name: u.name,
+        short_name: u.shortName,
+        focus: u.focus,
+        description: u.description,
+        lead: u.lead,
+        email: u.email,
+        position: u.position,
+      };
+      const { error } = u.id
+        ? await supabase.from('units').update(payload).eq('id', u.id)
+        : await supabase.from('units').insert(payload);
+      if (error) {
+        pushToast(error.message, 'error');
+        return false;
+      }
+      await refetchOrganisation();
+      pushToast(u.id ? `${u.name} updated` : `${u.name} added`, 'success');
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refetchOrganisation]
+  );
+
+  const deleteUnit = useCallback(
+    async (id: string) => {
+      // unit_staff cascades; stakeholders fall back to institute-wide.
+      const { error } = await supabase.from('units').delete().eq('id', id);
+      if (error) {
+        pushToast(error.message, 'error');
+        return false;
+      }
+      await refetchOrganisation();
+      pushToast('Unit removed', 'info');
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refetchOrganisation]
+  );
+
+  const saveUnitStaff = useCallback(
+    async (s: Omit<UnitStaff, 'id'> & { id?: string }) => {
+      const payload = {
+        unit_id: s.unitId,
+        name: s.name,
+        category: s.category,
+        title: s.title,
+        email: s.email,
+        focus: s.focus,
+        status: s.status,
+      };
+      const { error } = s.id
+        ? await supabase.from('unit_staff').update(payload).eq('id', s.id)
+        : await supabase.from('unit_staff').insert(payload);
+      if (error) {
+        pushToast(error.message, 'error');
+        return false;
+      }
+      await refetchOrganisation();
+      pushToast(s.id ? `${s.name} updated` : `${s.name} added`, 'success');
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refetchOrganisation]
+  );
+
+  const deleteUnitStaff = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.from('unit_staff').delete().eq('id', id);
+      if (error) {
+        pushToast(error.message, 'error');
+        return false;
+      }
+      await refetchOrganisation();
+      pushToast('Person removed', 'info');
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refetchOrganisation]
+  );
+
+  const saveStakeholder = useCallback(
+    async (s: Omit<Stakeholder, 'id'> & { id?: string }) => {
+      const payload = {
+        name: s.name,
+        type: s.type,
+        relationship: s.relationship,
+        focus: s.focus,
+        contact_person: s.contactPerson,
+        contact_email: s.contactEmail,
+        since: s.since,
+        status: s.status,
+        unit_id: s.unitId,
+      };
+      const { error } = s.id
+        ? await supabase.from('stakeholders').update(payload).eq('id', s.id)
+        : await supabase.from('stakeholders').insert(payload);
+      if (error) {
+        pushToast(error.message, 'error');
+        return false;
+      }
+      await refetchOrganisation();
+      pushToast(s.id ? `${s.name} updated` : `${s.name} added`, 'success');
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refetchOrganisation]
+  );
+
+  const deleteStakeholder = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.from('stakeholders').delete().eq('id', id);
+      if (error) {
+        pushToast(error.message, 'error');
+        return false;
+      }
+      await refetchOrganisation();
+      pushToast('Stakeholder removed', 'info');
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refetchOrganisation]
+  );
+
   const deleteVenue = useCallback(
     async (id: string) => {
       const { error } = await supabase.from('venues').delete().eq('id', id);
@@ -720,6 +853,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     venues,
     saveVenue,
     deleteVenue,
+    saveUnit,
+    deleteUnit,
+    saveUnitStaff,
+    deleteUnitStaff,
+    saveStakeholder,
+    deleteStakeholder,
     reservePlace,
     cancelReservation,
     isReserved,
