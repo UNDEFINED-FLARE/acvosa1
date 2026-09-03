@@ -27,7 +27,7 @@ export function ImpactDashboard() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="ACVOSA Impact" subtitle="Measuring participation, projects and institutional impact." />
+      <PageHeader title="Institute Impact" subtitle="Measuring participation, projects and institutional impact." />
 
       {/* Large stats */}
       <div className="mt-8 grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">

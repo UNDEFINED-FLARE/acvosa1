@@ -13,6 +13,10 @@ export type Route =
   | 'impact'
   | 'history'
   | 'profile'
+  // institute (shared by both roles)
+  | 'units'
+  | 'unit-detail'
+  | 'stakeholders'
   // admin
   | 'admin-dashboard'
   | 'admin-activities'

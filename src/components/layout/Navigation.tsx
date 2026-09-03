@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard, CalendarDays, CheckSquare, FolderKanban, User,
   Home, Bell, BarChart3, Clock, Settings, FileText, Users, ListChecks, History,
+  Network, Handshake,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -17,6 +18,8 @@ const studentNav: NavItem[] = [
   { label: 'Activities', route: 'activities', icon: CalendarDays },
   { label: 'Attendance', route: 'attendance', icon: CheckSquare },
   { label: 'Projects', route: 'projects', icon: FolderKanban },
+  { label: 'Units', route: 'units', icon: Network },
+  { label: 'Stakeholders', route: 'stakeholders', icon: Handshake },
   { label: 'Impact', route: 'impact', icon: BarChart3 },
   { label: 'History', route: 'history', icon: History },
   { label: 'Profile', route: 'profile', icon: User },
@@ -29,6 +32,8 @@ const adminNav: NavItem[] = [
   { label: 'Attendance', route: 'admin-attendance', icon: CheckSquare },
   { label: 'Notifications', route: 'admin-notifications', icon: Bell },
   { label: 'Projects', route: 'admin-projects', icon: FolderKanban },
+  { label: 'Units', route: 'units', icon: Network },
+  { label: 'Stakeholders', route: 'stakeholders', icon: Handshake },
   { label: 'Impact', route: 'admin-impact', icon: BarChart3 },
   { label: 'Members', route: 'admin-members', icon: Users },
   { label: 'Reports', route: 'admin-reports', icon: FileText },
@@ -39,12 +44,12 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-9 h-9 rounded-xl bg-ink-black flex items-center justify-center shrink-0">
-              <span className="text-ink-white font-bold text-lg tracking-tighter"><img src="https://i.ibb.co/Ndkgz1LY/grok-1787423357591.jpg" alt="ACVOSA Logo" className="w-full h-full object-cover" /></span>
+              <span className="text-ink-white font-bold text-lg tracking-tighter"><img src="/logo.jpg" alt="Institute for Rural Development logo" className="w-full h-full object-cover" /></span>
       </div>
       {!collapsed && (
         <div className="leading-none">
-          <p className="font-semibold text-sm text-ink-charcoal tracking-tight">ACVOSA</p>
-          <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-0.5">Connect</p>
+          <p className="font-semibold text-sm text-ink-charcoal tracking-tight">UNIVEN IRD</p>
+          <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-0.5">Rural Development</p>
         </div>
       )}
     </div>
@@ -61,7 +66,10 @@ export function StudentSidebar() {
       </div>
       <nav className="flex-1 px-3 py-2 flex flex-col gap-1">
         {studentNav.map((item) => {
-          const active = route === item.route || (item.route === 'activities' && route === 'activity-detail') || (item.route === 'projects' && route === 'project-detail');
+          const active = route === item.route
+          || (item.route === 'activities' && route === 'activity-detail')
+          || (item.route === 'projects' && route === 'project-detail')
+          || (item.route === 'units' && route === 'unit-detail');
           return (
             <button
               key={item.route}
@@ -103,7 +111,9 @@ export function AdminSidebar() {
       </div>
       <nav className="flex-1 px-3 py-1 flex flex-col gap-1 overflow-y-auto scrollbar-thin">
         {adminNav.map((item) => {
-          const active = route === item.route || (item.route === 'admin-activities' && route === 'admin-create-activity');
+          const active = route === item.route
+          || (item.route === 'admin-activities' && route === 'admin-create-activity')
+          || (item.route === 'units' && route === 'unit-detail');
           return (
             <button
               key={item.route}
@@ -137,6 +147,7 @@ const studentBottom: NavItem[] = [
   { label: 'Activities', route: 'activities', icon: CalendarDays },
   { label: 'Attendance', route: 'attendance', icon: Clock },
   { label: 'Projects', route: 'projects', icon: FolderKanban },
+  { label: 'Units', route: 'units', icon: Network },
   { label: 'Profile', route: 'profile', icon: User },
 ];
 
@@ -145,6 +156,7 @@ const adminBottom: NavItem[] = [
   { label: 'Activities', route: 'admin-activities', icon: CalendarDays },
   { label: 'Attendance', route: 'admin-attendance', icon: CheckSquare },
   { label: 'Projects', route: 'admin-projects', icon: FolderKanban },
+  { label: 'Units', route: 'units', icon: Network },
   { label: 'Impact', route: 'admin-impact', icon: BarChart3 },
 ];
 
@@ -159,6 +171,7 @@ export function BottomNav({ admin }: { admin?: boolean }) {
             || (item.route === 'activities' && (route === 'activity-detail' || route === 'admin-activities' || route === 'admin-create-activity'))
             || (item.route === 'admin-attendance' && route === 'admin-attendance')
             || (item.route === 'projects' && (route === 'project-detail' || route === 'admin-projects'))
+            || (item.route === 'units' && route === 'unit-detail')
             || (item.route === 'admin-impact' && route === 'admin-impact');
           return (
             <button

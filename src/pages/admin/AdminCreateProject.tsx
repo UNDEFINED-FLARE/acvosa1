@@ -52,7 +52,7 @@ export function AdminCreateProject() {
     setSubmitting(true);
     await createProject({
       title: form.title,
-      description: form.description || 'ACVOSA institutional project.',
+      description: form.description || 'Institute for Rural Development project.',
       objectives: objectivesList,
       date: form.date,
       location: form.location,
@@ -82,7 +82,7 @@ export function AdminCreateProject() {
       </button>
 
       <h1 className="text-2xl sm:text-3xl font-bold text-ink-charcoal tracking-tight">Create Project</h1>
-      <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Start a new ACVOSA institutional project.</p>
+      <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Start a new Institute for Rural Development project.</p>
 
       <div className="mt-6 grid lg:grid-cols-[1.5fr_1fr] gap-6">
         <div className="flex flex-col gap-5">

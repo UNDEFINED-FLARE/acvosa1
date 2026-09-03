@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// ─── ACVOSA Connect — Firestore Security Rules ─────────────────────
+// ─── IRD Connect — Firestore Security Rules ─────────────────────
 // Default-deny: all access blocked unless explicitly granted below.
 // Role helpers read the user's role from their Firestore profile document.
 // Admin-tier roles: admin, superAdmin, eventManager, projectManager, reportViewer

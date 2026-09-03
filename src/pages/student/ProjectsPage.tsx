@@ -20,7 +20,7 @@ export function ProjectsPage() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="ACVOSA Projects" subtitle="Explore the projects creating meaningful impact." />
+      <PageHeader title="Institute Projects" subtitle="Explore the projects creating meaningful impact." />
 
       <div className="mt-6 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {projects.map((p) => (

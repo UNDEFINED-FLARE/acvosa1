@@ -112,7 +112,7 @@ function Shell() {
   const { route, params } = useNav();
 
   if (!initialized || loading) {
-    return <FullPageLoader label="Loading ACVOSA Connect..." />;
+    return <FullPageLoader label="Loading IRD Connect..." />;
   }
 
   const effectiveRoute = determineRoute(route, user);

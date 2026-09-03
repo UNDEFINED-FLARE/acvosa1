@@ -49,7 +49,7 @@ export function ActivityDetail() {
   const handleScan = async (raw: string) => {
     if (verifyState !== 'idle') return;
     const [prefix, scannedActivityId, code] = raw.trim().split(':').map((s) => s?.trim());
-    if (prefix?.toUpperCase() !== 'ACVOSA' || scannedActivityId !== activity.id || !code) {
+    if (prefix?.toUpperCase() !== 'IRD' || scannedActivityId !== activity.id || !code) {
       setErrorText("That QR code isn't for this activity. Make sure you're scanning the code the admin has on screen right now.");
       setVerifyState('invalid');
       window.setTimeout(() => setVerifyState('idle'), 2200);

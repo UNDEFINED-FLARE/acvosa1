@@ -16,7 +16,7 @@ export function AdminActivities() {
   return (
     <PageContainer className="pb-28 lg:pb-10">
       <div className="flex items-start justify-between gap-4">
-        <PageHeader title="Activities" subtitle="Create and manage ACVOSA programmes." />
+        <PageHeader title="Activities" subtitle="Create and manage Institute programmes." />
         <Button size="sm" onClick={() => navigate('admin-create-activity')} className="shrink-0">
           <Plus size={16} /> New Activity
         </Button>
@@ -57,7 +57,7 @@ export function AdminActivities() {
         <EmptyState
           icon={<CalendarDays size={24} />}
           title="No activities yet"
-          description="Create your first ACVOSA activity."
+          description="Create your first Institute activity."
           action={<Button onClick={() => navigate('admin-create-activity')}><Plus size={16} /> New Activity</Button>}
         />
       )}

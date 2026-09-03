@@ -23,7 +23,7 @@ export function ProfilePage() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="My Profile" subtitle="Your ACVOSA membership and participation summary." />
+      <PageHeader title="My Profile" subtitle="Your Institute membership and participation summary." />
 
       {/* Profile card */}
       <Card className="mt-6 p-0 overflow-hidden" hover={false}>
@@ -67,7 +67,7 @@ export function ProfilePage() {
       <Card className="mt-6">
         <h3 className="text-base font-semibold text-ink-charcoal tracking-tight">Participation Summary</h3>
         <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">
-          You have participated in {attendanceRecords.length} activities and contributed to ACVOSA's reach of {impact.participants.toLocaleString()} students across {impact.communities} communities.
+          You have participated in {attendanceRecords.length} activities and contributed to the Institute's reach of {impact.participants.toLocaleString()} students across {impact.communities} communities.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Badge tone="outline">Workshops</Badge>

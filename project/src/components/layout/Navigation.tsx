@@ -43,7 +43,7 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
       </div>
       {!collapsed && (
         <div className="leading-none">
-          <p className="font-semibold text-sm text-ink-charcoal tracking-tight">ACVOSA</p>
+          <p className="font-semibold text-sm text-ink-charcoal tracking-tight">UNIVEN IRD</p>
           <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-0.5">Connect</p>
         </div>
       )}

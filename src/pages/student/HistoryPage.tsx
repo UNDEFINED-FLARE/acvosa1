@@ -16,14 +16,15 @@ export function HistoryPage() {
   return (
     <PageContainer className="pb-28 lg:pb-10">
       <PageHeader
-        title="ACVOSA History"
+        title="Institute History"
         subtitle="Preserving institutional knowledge — a record of milestones and achievements."
       />
 
       <Card className="mt-6 bg-ink-charcoal text-ink-white border-ink-charcoal">
         <p className="text-sm text-ink-white/70 tracking-tight">
-          Founded in 2023, ACVOSA has grown from 14 founding members into an organisation that has reached
-          thousands of students across Limpopo. This timeline preserves the milestones that define our journey.
+          The Institute for Rural Development sits within the Faculty of Science, Engineering and Agriculture at the
+          University of Venda, working with rural communities across Limpopo through research, training and engagement.
+          This timeline preserves the milestones that define that work.
         </p>
       </Card>
 

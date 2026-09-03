@@ -17,7 +17,7 @@ export function ActivitiesPage() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="Activities" subtitle="Discover upcoming ACVOSA programmes and opportunities." />
+      <PageHeader title="Activities" subtitle="Discover upcoming Institute programmes and opportunities." />
 
       <div className="mt-6 -mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-2 w-max sm:w-full sm:flex-wrap">
@@ -47,7 +47,7 @@ export function ActivitiesPage() {
         <EmptyState
           icon={<CalendarDays size={24} />}
           title="No activities in this category"
-          description="Try a different filter to discover ACVOSA programmes."
+          description="Try a different filter to discover Institute programmes."
         />
       )}
     </PageContainer>

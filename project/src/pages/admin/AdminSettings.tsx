@@ -25,7 +25,7 @@ export function AdminSettings() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="Settings" subtitle="Configure ACVOSA Connect platform preferences." />
+      <PageHeader title="Settings" subtitle="Configure IRD Connect platform preferences." />
 
       <div className="mt-6 grid lg:grid-cols-2 gap-6">
         {/* Profile */}
@@ -109,7 +109,7 @@ export function AdminSettings() {
             </p>
             <div className="mt-3 flex items-center gap-2">
               <Building2 size={14} className="text-ink-dark-grey/40" />
-              <span className="text-xs text-ink-dark-grey/50 tracking-tight">University of Venda · ACVOSA</span>
+              <span className="text-xs text-ink-dark-grey/50 tracking-tight">University of Venda · Institute for Rural Development</span>
             </div>
           </Card>
 

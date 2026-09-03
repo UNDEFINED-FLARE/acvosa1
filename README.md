@@ -1,6 +1,6 @@
-# ACVOSA ImpactOS
+# Institute ImpactOS
 
-Community-impact management app for ACVOSA (University of Venda student org). React + TypeScript + Vite, backed by Supabase (Postgres, Auth, RLS).
+Community-impact management app for the University of Venda Institute for Rural Development (IRD). React + TypeScript + Vite, backed by Supabase (Postgres, Auth, RLS).
 
 ## Local setup
 
@@ -30,7 +30,7 @@ Every new signup becomes a `student` by default — nobody can grant themselves 
 
 
 - **Enable leaked-password protection**: Supabase dashboard → Authentication → Policies (flagged by the project's security advisor; one toggle)
-- **Custom email templates**: Supabase dashboard → Authentication → Email Templates, so signup/reset emails look like ACVOSA, not generic Supabase
+- **Custom email templates**: Supabase dashboard → Authentication → Email Templates, so signup/reset emails look like the Institute for Rural Development, not generic Supabase
 - **Seed reference data**: `history_events` and `impact_snapshots` are currently empty — add your org's past years' data as an admin so the History and Impact Dashboard pages have something to show
 - **Privacy policy / terms**: this app stores student names, student numbers, and attendance records — South African POPIA compliance requires a stated privacy policy and lawful basis for processing before real students sign up
 - **Domain + hosting**: deploy the built `dist/` output (e.g. Vercel, Netlify, Cloudflare Pages) with the same `.env` values set as environment variables in that platform's dashboard, not committed to the repo

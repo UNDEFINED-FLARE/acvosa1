@@ -30,7 +30,7 @@ export function AdminNotifications() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="Notifications" subtitle="Send announcements and reminders to ACVOSA members." />
+      <PageHeader title="Notifications" subtitle="Send announcements and reminders to Institute members." />
 
       <div className="mt-6 grid lg:grid-cols-[1.3fr_1fr] gap-6">
         {/* Compose */}

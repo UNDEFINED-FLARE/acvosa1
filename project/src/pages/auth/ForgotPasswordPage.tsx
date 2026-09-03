@@ -31,7 +31,7 @@ export function ForgotPasswordPage() {
               <span className="text-ink-white font-bold text-lg tracking-tighter">A</span>
             </div>
             <div className="leading-none">
-              <p className="font-bold text-lg text-ink-charcoal tracking-tight">ACVOSA</p>
+              <p className="font-bold text-lg text-ink-charcoal tracking-tight">UNIVEN IRD</p>
               <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-1">Connect</p>
             </div>
           </div>

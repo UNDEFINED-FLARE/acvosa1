@@ -38,7 +38,7 @@ const REPORTS: ReportType[] = [
   {
     id: 'project',
     title: 'Project Report',
-    description: 'Status and impact of all ACVOSA projects.',
+    description: 'Status and impact of all Institute projects.',
     icon: FolderKanban,
     fields: ['28 projects', '4 completed', '1,813 students reached'],
   },
@@ -51,8 +51,8 @@ const REPORTS: ReportType[] = [
   },
   {
     id: 'annual',
-    title: 'Annual ACVOSA Report',
-    description: 'Complete yearly review of ACVOSA operations and impact.',
+    title: 'Annual Institute Report',
+    description: 'Complete yearly review of Institute operations and impact.',
     icon: BookOpen,
     fields: ['2026 full year', 'All metrics included', 'Board-ready format'],
   },
@@ -77,7 +77,7 @@ export function AdminReports() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="Reports" subtitle="Generate institutional reports for ACVOSA governance." />
+      <PageHeader title="Reports" subtitle="Generate institutional reports for Institute governance." />
 
       <div className="mt-6 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {REPORTS.map((r) => (

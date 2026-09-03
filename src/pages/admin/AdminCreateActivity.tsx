@@ -27,11 +27,11 @@ interface FormData {
 const initial: FormData = {
   name: '', description: '', category: 'Workshops', date: '', startTime: '09:00', endTime: '12:00',
   venue: '', capacity: '50', registrationDeadline: '',
-  requirements: '', organizer: 'ACVOSA',
+  requirements: '', organizer: 'Institute for Rural Development',
 };
 
 export function AdminCreateActivity() {
-  const { createActivity, uploadActivityImage, pushToast } = useApp();
+  const { createActivity, uploadActivityImage, pushToast, units } = useApp();
   const { navigate } = useNav();
   const [form, setForm] = useState<FormData>(initial);
   const [requirementsList, setRequirementsList] = useState<string[]>([]);
@@ -85,7 +85,7 @@ export function AdminCreateActivity() {
 
     createActivity({
       name: form.name,
-      description: form.description || 'ACVOSA activity — details to be announced.',
+      description: form.description || 'Institute activity — details to be announced.',
       category: form.category,
       date: form.date,
       startTime: form.startTime,
@@ -111,7 +111,7 @@ export function AdminCreateActivity() {
       </button>
 
       <h1 className="text-2xl sm:text-3xl font-bold text-ink-charcoal tracking-tight">Create Activity</h1>
-      <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Publish a new ACVOSA programme for student registration.</p>
+      <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Publish a new Institute programme for student registration.</p>
 
       <div className="mt-6 grid lg:grid-cols-[1.5fr_1fr] gap-6">
         <div className="flex flex-col gap-5">
@@ -134,8 +134,11 @@ export function AdminCreateActivity() {
                   </select>
                 </div>
                 <div>
-                  <label className={label}>Organizer</label>
-                  <input className={field} value={form.organizer} onChange={(e) => set('organizer', e.target.value)} />
+                  <label className={label}>Organizing unit</label>
+                  <select className={field} value={form.organizer} onChange={(e) => set('organizer', e.target.value)}>
+                    <option>Institute for Rural Development</option>
+                    {units.map((u) => <option key={u.id}>{u.name}</option>)}
+                  </select>
                 </div>
               </div>
             </div>

@@ -11,6 +11,9 @@ import type {
   Project,
   Reservation,
   Role,
+  Stakeholder,
+  Unit,
+  UnitStaff,
   User,
 } from '@/types';
 import { supabase } from '@/lib/supabase';
@@ -36,6 +39,9 @@ interface AppState {
   members: Member[];
   impact: ImpactSnapshot;
   history: HistoryEvent[];
+  units: Unit[];
+  unitStaff: UnitStaff[];
+  stakeholders: Stakeholder[];
 
   reservePlace: (activityId: string) => Promise<void>;
   cancelReservation: (activityId: string) => Promise<void>;
@@ -173,6 +179,47 @@ function mapMember(row: any): Member {
   };
 }
 
+function mapUnit(row: any): Unit {
+  return {
+    id: row.id,
+    name: row.name,
+    shortName: row.short_name ?? row.name,
+    focus: row.focus ?? '',
+    description: row.description ?? '',
+    lead: row.lead ?? '',
+    email: row.email ?? '',
+    position: row.position ?? 0,
+  };
+}
+
+function mapUnitStaff(row: any): UnitStaff {
+  return {
+    id: row.id,
+    unitId: row.unit_id,
+    name: row.name,
+    category: row.category,
+    title: row.title ?? '',
+    email: row.email ?? '',
+    focus: row.focus ?? '',
+    status: row.status,
+  };
+}
+
+function mapStakeholder(row: any): Stakeholder {
+  return {
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    relationship: row.relationship ?? '',
+    focus: row.focus ?? '',
+    contactPerson: row.contact_person ?? '',
+    contactEmail: row.contact_email ?? '',
+    since: row.since ?? '',
+    status: row.status,
+    unitId: row.unit_id ?? null,
+  };
+}
+
 const EMPTY_IMPACT: ImpactSnapshot = {
   year: '—',
   activities: 0,
@@ -193,6 +240,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [history, setHistory] = useState<HistoryEvent[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [unitStaff, setUnitStaff] = useState<UnitStaff[]>([]);
+  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [impact, setImpact] = useState<ImpactSnapshot>(EMPTY_IMPACT);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -282,6 +332,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refetchOrganisation = useCallback(async () => {
+    const [unitsRes, staffRes, stakeholdersRes] = await Promise.all([
+      supabase.from('units').select('*').order('position', { ascending: true }),
+      supabase.from('unit_staff').select('*').order('position', { ascending: true }),
+      supabase.from('stakeholders').select('*').order('name', { ascending: true }),
+    ]);
+    if (!unitsRes.error && unitsRes.data) setUnits(unitsRes.data.map(mapUnit));
+    if (!staffRes.error && staffRes.data) setUnitStaff(staffRes.data.map(mapUnitStaff));
+    if (!stakeholdersRes.error && stakeholdersRes.data) setStakeholders(stakeholdersRes.data.map(mapStakeholder));
+  }, []);
+
   const refetchHistoryAndImpact = useCallback(async () => {
     const [historyRes, impactRes] = await Promise.all([
       supabase.from('history_events').select('*').order('year', { ascending: true }),
@@ -323,8 +384,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refetchMembers(),
       refetchDeadlines(),
       refetchHistoryAndImpact(),
+      refetchOrganisation(),
     ]).finally(() => setLoading(false));
-  }, [session, role, refetchActivities, refetchReservations, refetchAttendance, refetchNotifications, refetchProjects, refetchMembers, refetchDeadlines, refetchHistoryAndImpact]);
+  }, [session, role, refetchActivities, refetchReservations, refetchAttendance, refetchNotifications, refetchProjects, refetchMembers, refetchDeadlines, refetchHistoryAndImpact, refetchOrganisation]);
 
   const isReserved = useCallback(
     (activityId: string) => reservations.some((r) => r.activityId === activityId && r.status === 'confirmed'),
@@ -559,6 +621,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     members,
     impact,
     history,
+    units,
+    unitStaff,
+    stakeholders,
     reservePlace,
     cancelReservation,
     isReserved,

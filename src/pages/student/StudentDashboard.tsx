@@ -7,6 +7,8 @@ import { Progress } from '@/components/ui/Progress';
 import { Badge } from '@/components/ui/Badge';
 import { ActivityCard } from '@/components/student/ActivityCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { Shelf, ShelfItem } from '@/components/ui/Shelf';
+import { RegisterReportCard } from '@/components/institute/RegisterReportCard';
 import { Avatar } from '@/components/ui/Avatar';
 import { initials, formatDate, relativeDeadline, classForPriority, daysUntil } from '@/utils/format';
 import {
@@ -22,12 +24,15 @@ const QUICK_ACTIONS = [
 ];
 
 export function StudentDashboard() {
-  const { user, activities, deadlines } = useApp();
+  const { user, activities, deadlines, isReserved } = useApp();
   const { navigate } = useNav();
 
   const upcoming = activities.filter((a) => a.status !== 'completed').sort((a, b) => a.date.localeCompare(b.date));
   const featured = upcoming[0];
-  const upcomingList = upcoming.filter((a) => a.id !== featured?.id).slice(0, 3);
+  const upcomingList = upcoming.filter((a) => a.id !== featured?.id);
+  const myRegisters = activities
+    .filter((a) => a.status !== 'upcoming' && isReserved(a.id))
+    .sort((a, b) => b.date.localeCompare(a.date));
   const sortedDeadlines = [...deadlines].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
   const closingSoon = [...activities]
     .filter((a) => a.status === 'upcoming' && daysUntil(a.registrationDeadline) >= 0)
@@ -40,7 +45,7 @@ export function StudentDashboard() {
         <div>
           <p className="text-sm text-ink-dark-grey/60 tracking-tight">Good morning,</p>
           <h1 className="text-2xl sm:text-3xl font-bold text-ink-charcoal tracking-tight mt-0.5">{user.name.split(' ')[0]}</h1>
-          <p className="text-sm text-ink-dark-grey/65 mt-1 tracking-tight">Stay connected with what ACVOSA is doing.</p>
+          <p className="text-sm text-ink-dark-grey/65 mt-1 tracking-tight">Stay connected with what the Institute is doing.</p>
         </div>
         <div className="flex items-center gap-3">
           <Avatar initials={initials(user.name)} size="lg" />
@@ -126,20 +131,59 @@ export function StudentDashboard() {
         </div>
       </div>
 
-      <div className="mt-8 grid lg:grid-cols-[1.6fr_1fr] gap-6">
-        {/* Upcoming activities */}
-        <div>
-          <SectionHeader
-            title="Upcoming Activities"
-            action={<button onClick={() => navigate('activities')} className="text-sm text-ink-dark-grey/70 hover:text-ink-charcoal transition-colors tracking-tight flex items-center gap-1">View all <ArrowRight size={14} /></button>}
-          />
-          <div className="mt-4 flex flex-col gap-3">
-            {upcomingList.map((a) => (
-              <ActivityCard key={a.id} activity={a} compact />
-            ))}
-          </div>
-        </div>
+      {/* Upcoming activities shelf */}
+      <div className="mt-10">
+        <Shelf
+          title="Upcoming Activities"
+          subtitle={upcomingList.length > 0 ? `${upcomingList.length} more coming up` : undefined}
+          action={
+            <button onClick={() => navigate('activities')} className="text-sm text-ink-dark-grey/70 hover:text-ink-charcoal transition-colors tracking-tight flex items-center gap-1">
+              View all <ArrowRight size={14} />
+            </button>
+          }
+        >
+          {upcomingList.length === 0 ? (
+            <ShelfItem className="w-full">
+              <Card hover={false} className="text-sm text-ink-dark-grey/60 tracking-tight">No other activities are scheduled right now.</Card>
+            </ShelfItem>
+          ) : (
+            upcomingList.map((a) => (
+              <ShelfItem key={a.id}>
+                <ActivityCard activity={a} />
+              </ShelfItem>
+            ))
+          )}
+        </Shelf>
+      </div>
 
+      {/* Register report shelf */}
+      <div className="mt-10">
+        <Shelf
+          title="My Register Reports"
+          subtitle="Attendance registers for activities you reserved."
+          action={
+            <button onClick={() => navigate('attendance')} className="text-sm text-ink-dark-grey/70 hover:text-ink-charcoal transition-colors tracking-tight flex items-center gap-1">
+              My attendance <ArrowRight size={14} />
+            </button>
+          }
+        >
+          {myRegisters.length === 0 ? (
+            <ShelfItem className="w-full">
+              <Card hover={false} className="text-sm text-ink-dark-grey/60 tracking-tight">
+                Reserve a place and your register reports will appear here.
+              </Card>
+            </ShelfItem>
+          ) : (
+            myRegisters.map((a) => (
+              <ShelfItem key={a.id}>
+                <RegisterReportCard activity={a} onOpen={() => navigate('activity-detail', { id: a.id })} />
+              </ShelfItem>
+            ))
+          )}
+        </Shelf>
+      </div>
+
+      <div className="mt-10 grid lg:grid-cols-2 gap-6">
         {/* Deadlines */}
         <div>
           <SectionHeader title="Important Deadlines" />

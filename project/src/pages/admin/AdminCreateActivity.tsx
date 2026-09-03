@@ -29,7 +29,7 @@ interface FormData {
 const initial: FormData = {
   name: '', description: '', category: 'Workshops', date: '', startTime: '09:00', endTime: '12:00',
   venue: '', capacity: '50', registrationDeadline: '', attendanceMethod: 'QR + GPS',
-  requirements: '', organizer: 'ACVOSA',
+  requirements: '', organizer: 'Institute for Rural Development',
 };
 
 export function AdminCreateActivity() {
@@ -54,7 +54,7 @@ export function AdminCreateActivity() {
     }
     createActivity({
       name: form.name,
-      description: form.description || 'ACVOSA activity — details to be announced.',
+      description: form.description || 'Institute activity — details to be announced.',
       category: form.category,
       date: form.date,
       startTime: form.startTime,
@@ -80,7 +80,7 @@ export function AdminCreateActivity() {
       </button>
 
       <h1 className="text-2xl sm:text-3xl font-bold text-ink-charcoal tracking-tight">Create Activity</h1>
-      <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Publish a new ACVOSA programme for student registration.</p>
+      <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Publish a new Institute programme for student registration.</p>
 
       <div className="mt-6 grid lg:grid-cols-[1.5fr_1fr] gap-6">
         <div className="flex flex-col gap-5">

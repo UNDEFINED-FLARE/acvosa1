@@ -49,7 +49,7 @@ export function ReservationsPage() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="My Reservations" subtitle="Manage your places at ACVOSA activities." />
+      <PageHeader title="My Reservations" subtitle="Manage your places at Institute activities." />
 
       <div className="mt-6 flex items-center gap-2">
         {TABS.map((t) => (

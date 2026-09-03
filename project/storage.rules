@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// ─── ACVOSA Connect — Firebase Storage Security Rules ──────────────
+// ─── IRD Connect — Firebase Storage Security Rules ──────────────
 // Controls access to file uploads (activity images, profile images, project evidence).
 // Validates file type and size. Only authorized users can upload/delete.
 

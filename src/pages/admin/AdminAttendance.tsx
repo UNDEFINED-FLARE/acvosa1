@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useNav } from '@/context/NavContext';
 import { PageContainer } from '@/components/layout/Topbar';
 import { PageHeader } from '@/components/ui/SectionHeader';
 import { Card } from '@/components/ui/Card';
@@ -11,7 +12,8 @@ import type { Participant } from '@/types';
 
 export function AdminAttendance() {
   const { activities, fetchParticipants, generateAttendanceCode } = useApp();
-  const [selectedActivity, setSelectedActivity] = useState(activities[0]?.id ?? '');
+  const { params } = useNav();
+  const [selectedActivity, setSelectedActivity] = useState(params.id ?? activities[0]?.id ?? '');
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [generating, setGenerating] = useState(false);
 
@@ -36,7 +38,7 @@ export function AdminAttendance() {
     setGenerating(false);
   };
 
-  const qrPayload = activity?.attendanceCode ? `ACVOSA:${activity.id}:${activity.attendanceCode}` : null;
+  const qrPayload = activity?.attendanceCode ? `IRD:${activity.id}:${activity.attendanceCode}` : null;
   const qrImageUrl = qrPayload
     ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(qrPayload)}`
     : null;

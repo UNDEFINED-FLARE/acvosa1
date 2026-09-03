@@ -20,7 +20,7 @@ export function RoleSelect() {
               <span className="text-ink-white font-bold text-lg tracking-tighter">A</span>
             </div>
             <div className="leading-none">
-              <p className="font-bold text-lg text-ink-charcoal tracking-tight">ACVOSA</p>
+              <p className="font-bold text-lg text-ink-charcoal tracking-tight">UNIVEN IRD</p>
               <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-1">Connect</p>
             </div>
           </div>
@@ -29,7 +29,7 @@ export function RoleSelect() {
             Choose your experience
           </h1>
           <p className="text-sm sm:text-base text-ink-dark-grey/70 mt-3 tracking-tight">
-            The institutional platform for ACVOSA — University of Venda.
+            The institutional platform for the Institute for Rural Development — University of Venda.
           </p>
 
           <div className="mt-8 flex flex-col gap-3">
@@ -55,7 +55,7 @@ export function RoleSelect() {
                 <Shield size={22} className="text-ink-white" strokeWidth={1.8} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-ink-charcoal tracking-tight">ACVOSA Administrator</p>
+                <p className="font-semibold text-ink-charcoal tracking-tight">IRD Administrator</p>
                 <p className="text-sm text-ink-dark-grey/65 tracking-tight mt-0.5">Manage activities, attendance, projects and impact</p>
               </div>
               <ArrowRight size={18} className="text-ink-dark-grey/40 group-hover:text-ink-charcoal group-hover:translate-x-1 transition-all" />

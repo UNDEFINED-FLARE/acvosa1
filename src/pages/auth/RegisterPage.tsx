@@ -47,16 +47,16 @@ export function RegisterPage() {
         <div className="w-full max-w-sm">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-11 h-11 rounded-2xl bg-ink-black flex items-center justify-center">
-              <span className="text-ink-white font-bold text-lg tracking-tighter"><img src="https://i.ibb.co/Ndkgz1LY/grok-1787423357591.jpg" alt="ACVOSA Logo" className="w-full h-full object-cover" /></span>
+              <span className="text-ink-white font-bold text-lg tracking-tighter"><img src="/logo.jpg" alt="Institute for Rural Development logo" className="w-full h-full object-cover" /></span>
             </div>
             <div className="leading-none">
-              <p className="font-bold text-lg text-ink-charcoal tracking-tight">ACVOSA</p>
+              <p className="font-bold text-lg text-ink-charcoal tracking-tight">UNIVEN IRD</p>
               <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-1">Connect</p>
             </div>
           </div>
 
           <h1 className="text-2xl font-bold text-ink-charcoal tracking-tight">Create account</h1>
-          <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Join ACVOSA Connect as a student member.</p>
+          <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Join IRD Connect as a student member.</p>
 
           <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-3">

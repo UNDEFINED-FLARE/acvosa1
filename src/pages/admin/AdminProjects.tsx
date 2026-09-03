@@ -46,7 +46,7 @@ export function AdminProjects() {
     <PageContainer className="pb-28 lg:pb-10">
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <div className="flex items-start justify-between gap-4">
-        <PageHeader title="Projects" subtitle="Create and track ACVOSA institutional projects." />
+        <PageHeader title="Projects" subtitle="Create and track Institute projects." />
         <Button size="sm" className="shrink-0" onClick={() => navigate('admin-create-project')}>
           <Plus size={16} /> New Project
         </Button>

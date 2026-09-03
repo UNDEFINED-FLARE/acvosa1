@@ -45,13 +45,13 @@ export function LoginPage() {
               <span className="text-ink-white font-bold text-lg tracking-tighter">A</span>
             </div>
             <div className="leading-none">
-              <p className="font-bold text-lg text-ink-charcoal tracking-tight">ACVOSA</p>
+              <p className="font-bold text-lg text-ink-charcoal tracking-tight">UNIVEN IRD</p>
               <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-1">Connect</p>
             </div>
           </div>
 
           <h1 className="text-2xl font-bold text-ink-charcoal tracking-tight">Sign in</h1>
-          <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Access your ACVOSA Connect account.</p>
+          <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Access your IRD Connect account.</p>
 
           <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
             <div>

@@ -43,7 +43,7 @@ export function StudentDashboard() {
         <div>
           <p className="text-sm text-ink-dark-grey/60 tracking-tight">Good morning,</p>
           <h1 className="text-2xl sm:text-3xl font-bold text-ink-charcoal tracking-tight mt-0.5">{userFirstName}</h1>
-          <p className="text-sm text-ink-dark-grey/65 mt-1 tracking-tight">Stay connected with what ACVOSA is doing.</p>
+          <p className="text-sm text-ink-dark-grey/65 mt-1 tracking-tight">Stay connected with what the Institute is doing.</p>
         </div>
         <div className="flex items-center gap-3">
           <Avatar initials={userInitials} size="lg" />

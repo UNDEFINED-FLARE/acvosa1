@@ -27,7 +27,7 @@ export function NotificationsPage() {
   return (
     <PageContainer className="pb-28 lg:pb-10">
       <div className="flex items-start justify-between gap-4">
-        <PageHeader title="Notifications" subtitle="Stay up to date with ACVOSA activities and updates." />
+        <PageHeader title="Notifications" subtitle="Stay up to date with Institute activities and updates." />
         {unreadCount > 0 && (
           <Button variant="outline" size="sm" onClick={markAllRead} className="shrink-0 mt-1">
             <CheckCheck size={15} /> Mark all read

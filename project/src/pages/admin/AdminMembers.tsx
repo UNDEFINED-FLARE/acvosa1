@@ -23,7 +23,7 @@ export function AdminMembers() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="Members" subtitle="Manage ACVOSA membership and participation records." />
+      <PageHeader title="Members" subtitle="Manage Institute membership and participation records." />
 
       <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatTile label="Total Members" value={members.length} icon={<Users size={16} />} />

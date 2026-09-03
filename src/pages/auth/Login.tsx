@@ -72,10 +72,10 @@ export function Login() {
         <div className="w-full max-w-md animate-slide-up">
           <div className="flex items-center gap-3 mb-10">
             <div className="w-11 h-11 rounded-2xl bg-ink-black flex items-center justify-center">
-              <span className="text-ink-white font-bold text-lg tracking-tighter"><img src="https://i.ibb.co/Ndkgz1LY/grok-1787423357591.jpg" alt="ACVOSA Logo" className="w-full h-full object-cover" /></span>
+              <span className="text-ink-white font-bold text-lg tracking-tighter"><img src="/logo.jpg" alt="Institute for Rural Development logo" className="w-full h-full object-cover" /></span>
             </div>
             <div className="leading-none">
-              <p className="font-bold text-lg text-ink-charcoal tracking-tight">ACVOSA</p>
+              <p className="font-bold text-lg text-ink-charcoal tracking-tight">UNIVEN IRD</p>
               <p className="text-2xs text-ink-dark-grey/60 tracking-wider uppercase mt-1">Connect</p>
             </div>
           </div>
@@ -84,7 +84,7 @@ export function Login() {
             {mode === 'signin' ? 'Welcome back' : 'Create your account'}
           </h1>
           <p className="text-sm sm:text-base text-ink-dark-grey/70 mt-3 tracking-tight">
-            The institutional platform for ACVOSA — University of Venda.
+            The institutional platform for the Institute for Rural Development — University of Venda.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-3">

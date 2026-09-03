@@ -33,7 +33,7 @@ export function AdminDashboard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-ink-charcoal tracking-tight">Dashboard</h1>
-          <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Overview of ACVOSA operations and institutional activity.</p>
+          <p className="text-sm text-ink-dark-grey/65 mt-1.5 tracking-tight">Overview of Institute operations and institutional activity.</p>
         </div>
         <Button size="sm" onClick={() => navigate('admin-create-activity')} className="shrink-0">
           <Plus size={16} /> New Activity

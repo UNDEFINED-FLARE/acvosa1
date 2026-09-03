@@ -31,16 +31,16 @@ const DEMO_USERS: Record<string, { password: string; user: AppUser }> = {
       updatedAt: '2024-02-01',
     },
   },
-  'admin@acvosa.univen.ac.za': {
+  'admin@ird.univen.ac.za': {
     password: 'admin1234',
     user: {
       uid: 'demo-admin',
       studentNumber: '',
       firstName: 'Thandiwe',
       lastName: 'Mphahlele',
-      email: 'admin@acvosa.univen.ac.za',
+      email: 'admin@ird.univen.ac.za',
       phone: '',
-      faculty: 'ACVOSA Directorate',
+      faculty: 'IRD Directorate',
       course: '',
       yearLevel: '',
       role: 'admin',
@@ -54,10 +54,10 @@ const DEMO_USERS: Record<string, { password: string; user: AppUser }> = {
 
 export const DEMO_ACCOUNTS = [
   { email: 'karabo@student.univen.ac.za', password: 'demo1234', label: 'Student', name: 'Karabo Nkuna' },
-  { email: 'admin@acvosa.univen.ac.za', password: 'admin1234', label: 'Administrator', name: 'Dr. Thandiwe Mphahlele' },
+  { email: 'admin@ird.univen.ac.za', password: 'admin1234', label: 'Administrator', name: 'Dr. Thandiwe Mphahlele' },
 ];
 
-const CURRENT_USER_KEY = 'acvosa_demo_user';
+const CURRENT_USER_KEY = 'ird_demo_user';
 
 export function mapFBUser(uid: string, data: Record<string, unknown>): AppUser {
   return {

@@ -20,7 +20,7 @@ export function AttendanceHistory() {
 
   return (
     <PageContainer className="pb-28 lg:pb-10">
-      <PageHeader title="My Attendance" subtitle="Your participation record across ACVOSA activities." />
+      <PageHeader title="My Attendance" subtitle="Your participation record across Institute activities." />
 
       <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatTile label="Activities Attended" value={present} />

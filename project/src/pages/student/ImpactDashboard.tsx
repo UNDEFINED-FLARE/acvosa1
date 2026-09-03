@@ -34,7 +34,7 @@ export function ImpactDashboard() {
   return (
     <PageContainer className="pb-28 lg:pb-10">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <PageHeader title="ACVOSA Impact" subtitle="Measuring participation, projects and institutional impact." />
+        <PageHeader title="Institute Impact" subtitle="Measuring participation, projects and institutional impact." />
         <div className="flex items-center gap-1.5 bg-ink-white border border-ink-light-grey rounded-full p-1">
           {YEARS.map((y) => (
             <button
