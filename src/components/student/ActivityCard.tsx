@@ -60,7 +60,7 @@ export function ActivityCard({ activity, compact }: ActivityCardProps) {
       onClick={open}
       className="group bg-ink-white border border-ink-light-grey rounded-2xl shadow-soft hover:shadow-card hover:border-ink-grey transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
     >
-      <ActivityImage seed={activity.imageSeed} className="h-32 sm:h-36" />
+      <ActivityImage seed={activity.imageSeed} url={activity.imageUrl} className="h-32 sm:h-36" />
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-2">
           <Badge tone="outline">{activity.category}</Badge>

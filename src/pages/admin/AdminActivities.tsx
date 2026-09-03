@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ActivityImage } from '@/components/ui/ActivityImage';
 import { formatDate } from '@/utils/format';
 import { Plus, Calendar, Users, Pencil, CalendarDays } from 'lucide-react';
 
@@ -25,9 +26,11 @@ export function AdminActivities() {
       <div className="mt-6 flex flex-col gap-3">
         {activities.map((a) => (
           <Card key={a.id} hover={false} className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="shrink-0 w-12 h-12 rounded-xl bg-ink-light-grey flex items-center justify-center">
-              <CalendarDays size={20} className="text-ink-charcoal" />
-            </div>
+            <ActivityImage
+              seed={a.imageSeed}
+              url={a.imageUrl}
+              className="shrink-0 w-full h-28 sm:w-16 sm:h-16 rounded-xl"
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-sm font-semibold text-ink-charcoal tracking-tight">{a.name}</p>

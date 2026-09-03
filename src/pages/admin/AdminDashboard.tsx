@@ -6,6 +6,7 @@ import { StatTile } from '@/components/ui/StatTile';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Shelf, ShelfItem } from '@/components/ui/Shelf';
+import { ActivityImage } from '@/components/ui/ActivityImage';
 import { RegisterReportCard } from '@/components/institute/RegisterReportCard';
 import { formatDate } from '@/utils/format';
 import {
@@ -78,18 +79,22 @@ export function AdminDashboard() {
               <ShelfItem key={a.id}>
                 <Card
                   hover
-                  className="h-full flex flex-col"
+                  padded={false}
+                  className="h-full flex flex-col overflow-hidden"
                   onClick={() => navigate('admin-activities')}
                 >
-                  <Badge tone="outline">{a.category}</Badge>
-                  <p className="font-semibold text-sm text-ink-charcoal tracking-tight mt-3 leading-snug line-clamp-2">{a.name}</p>
-                  <div className="mt-3 flex flex-col gap-1.5 text-xs text-ink-dark-grey/65 tracking-tight">
-                    <span className="flex items-center gap-2"><CalendarDays size={13} /> {formatDate(a.date, 'long')}</span>
-                    <span className="flex items-center gap-2"><Clock size={13} /> {a.startTime} – {a.endTime}</span>
-                    <span className="flex items-center gap-2 truncate"><MapPin size={13} /> {a.venue}</span>
-                  </div>
-                  <div className="mt-auto pt-4 text-xs text-ink-dark-grey/65 tracking-tight">
-                    <span className="font-semibold text-ink-charcoal tabular-nums">{a.reserved}</span> / {a.capacity} reserved
+                  <ActivityImage seed={a.imageSeed} url={a.imageUrl} className="h-28" />
+                  <div className="p-5 flex flex-col flex-1">
+                    <Badge tone="outline">{a.category}</Badge>
+                    <p className="font-semibold text-sm text-ink-charcoal tracking-tight mt-3 leading-snug line-clamp-2">{a.name}</p>
+                    <div className="mt-3 flex flex-col gap-1.5 text-xs text-ink-dark-grey/65 tracking-tight">
+                      <span className="flex items-center gap-2"><CalendarDays size={13} /> {formatDate(a.date, 'long')}</span>
+                      <span className="flex items-center gap-2"><Clock size={13} /> {a.startTime} – {a.endTime}</span>
+                      <span className="flex items-center gap-2 truncate"><MapPin size={13} /> {a.venue}</span>
+                    </div>
+                    <div className="mt-auto pt-4 text-xs text-ink-dark-grey/65 tracking-tight">
+                      <span className="font-semibold text-ink-charcoal tabular-nums">{a.reserved}</span> / {a.capacity} reserved
+                    </div>
                   </div>
                 </Card>
               </ShelfItem>

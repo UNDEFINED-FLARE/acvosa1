@@ -3,11 +3,19 @@
 -- at the moment the view is (re)created. Migration 0004 added `image_url` to
 -- the activities table AFTER this view was last created in 0002, so the view
 -- never picked it up — uploaded images saved correctly to the table but the
--- app (which reads through this view) always got `image_url: null`. Simply
--- recreating the view with the same definition forces Postgres to re-expand
--- `a.*` and include the new column.
+-- app (which reads through this view) always got `image_url: null`. Recreating
+-- the view with the same definition forces Postgres to re-expand `a.*` and
+-- include the new column.
+--
+-- NOTE: this must be DROP + CREATE, not CREATE OR REPLACE. `image_url` expands
+-- in the middle of `a.*`, ahead of the reserved/attended_count/no_show_count
+-- columns, and CREATE OR REPLACE refuses to rename or reorder existing view
+-- columns ("cannot change name of view column"). The grant is reissued because
+-- dropping the view drops its privileges with it.
 -- ============================================================================
-create or replace view public.activities_with_counts as
+drop view if exists public.activities_with_counts;
+
+create view public.activities_with_counts as
   select
     a.*,
     coalesce(r.reserved_count, 0)::int as reserved,
@@ -26,6 +34,8 @@ create or replace view public.activities_with_counts as
     where status = 'present'
     group by activity_id
   ) att on att.activity_id = a.id;
+
+grant select on public.activities_with_counts to anon, authenticated, service_role;
 
 -- Belt-and-braces: force the activity-images bucket to actually be public,
 -- in case it already existed (e.g. from a partial earlier run) with
