@@ -15,6 +15,7 @@ import type {
   Unit,
   UnitStaff,
   User,
+  Venue,
 } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -42,6 +43,10 @@ interface AppState {
   units: Unit[];
   unitStaff: UnitStaff[];
   stakeholders: Stakeholder[];
+  venues: Venue[];
+
+  saveVenue: (v: Omit<Venue, 'id'> & { id?: string }) => Promise<boolean>;
+  deleteVenue: (id: string) => Promise<boolean>;
 
   reservePlace: (activityId: string) => Promise<void>;
   cancelReservation: (activityId: string) => Promise<void>;
@@ -104,9 +109,12 @@ function mapActivity(row: any): Activity {
     requirements: row.requirements ?? [],
     imageSeed: row.image_seed ?? row.category?.toLowerCase(),
     imageUrl: row.image_url ?? null,
-    venueLat: row.venue_lat ?? null,
-    venueLng: row.venue_lng ?? null,
-    geofenceRadiusM: row.geofence_radius_m ?? 250,
+    venueId: row.venue_id ?? null,
+    // geofence_* are the resolved values from the view (venue's circle when the
+    // activity is linked to one, else its own coordinates).
+    venueLat: row.geofence_lat ?? null,
+    venueLng: row.geofence_lng ?? null,
+    geofenceRadiusM: row.geofence_radius ?? 250,
     status: 'upcoming',
   });
 }
@@ -213,6 +221,19 @@ function mapUnitStaff(row: any): UnitStaff {
   };
 }
 
+function mapVenue(row: any): Venue {
+  return {
+    id: row.id,
+    name: row.name,
+    address: row.address ?? '',
+    lat: row.lat,
+    lng: row.lng,
+    geofenceRadiusM: row.geofence_radius_m ?? 250,
+    capacity: row.capacity ?? null,
+    isActive: row.is_active ?? true,
+  };
+}
+
 function mapStakeholder(row: any): Stakeholder {
   return {
     id: row.id,
@@ -251,6 +272,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [unitStaff, setUnitStaff] = useState<UnitStaff[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [impact, setImpact] = useState<ImpactSnapshot>(EMPTY_IMPACT);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -340,6 +362,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refetchVenues = useCallback(async () => {
+    const { data, error } = await supabase.from('venues').select('*').order('name', { ascending: true });
+    if (!error && data) setVenues(data.map(mapVenue));
+  }, []);
+
   const refetchOrganisation = useCallback(async () => {
     const [unitsRes, staffRes, stakeholdersRes] = await Promise.all([
       supabase.from('units').select('*').order('position', { ascending: true }),
@@ -350,6 +377,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!staffRes.error && staffRes.data) setUnitStaff(staffRes.data.map(mapUnitStaff));
     if (!stakeholdersRes.error && stakeholdersRes.data) setStakeholders(stakeholdersRes.data.map(mapStakeholder));
   }, []);
+
+  const saveVenue = useCallback(
+    async (v: Omit<Venue, 'id'> & { id?: string }) => {
+      const payload = {
+        name: v.name,
+        address: v.address,
+        lat: v.lat,
+        lng: v.lng,
+        geofence_radius_m: v.geofenceRadiusM,
+        capacity: v.capacity,
+        is_active: v.isActive,
+      };
+      const { error } = v.id
+        ? await supabase.from('venues').update(payload).eq('id', v.id)
+        : await supabase.from('venues').insert(payload);
+      if (error) {
+        pushToast(error.message, 'error');
+        return false;
+      }
+      await Promise.all([refetchVenues(), refetchActivities()]);
+      pushToast(v.id ? `${v.name} updated` : `${v.name} added`, 'success');
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refetchVenues, refetchActivities]
+  );
+
+  const deleteVenue = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.from('venues').delete().eq('id', id);
+      if (error) {
+        // FK restrict fires when activities still point at this venue.
+        pushToast(
+          error.code === '23503'
+            ? 'This venue is used by existing activities — archive it instead.'
+            : error.message,
+          'error'
+        );
+        return false;
+      }
+      await refetchVenues();
+      pushToast('Venue removed', 'info');
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [refetchVenues]
+  );
 
   const refetchHistoryAndImpact = useCallback(async () => {
     const [historyRes, impactRes] = await Promise.all([
@@ -393,8 +467,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refetchDeadlines(),
       refetchHistoryAndImpact(),
       refetchOrganisation(),
+      refetchVenues(),
     ]).finally(() => setLoading(false));
-  }, [session, role, refetchActivities, refetchReservations, refetchAttendance, refetchNotifications, refetchProjects, refetchMembers, refetchDeadlines, refetchHistoryAndImpact, refetchOrganisation]);
+  }, [session, role, refetchActivities, refetchReservations, refetchAttendance, refetchNotifications, refetchProjects, refetchMembers, refetchDeadlines, refetchHistoryAndImpact, refetchOrganisation, refetchVenues]);
 
   const isReserved = useCallback(
     (activityId: string) => reservations.some((r) => r.activityId === activityId && r.status === 'confirmed'),
@@ -642,6 +717,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     units,
     unitStaff,
     stakeholders,
+    venues,
+    saveVenue,
+    deleteVenue,
     reservePlace,
     cancelReservation,
     isReserved,

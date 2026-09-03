@@ -37,6 +37,7 @@ export type Database = {
           venue_lat: number | null
           venue_lng: number | null
           geofence_radius_m: number
+          venue_id: string | null
         }
         Insert: {
           attendance_code?: string | null
@@ -60,6 +61,7 @@ export type Database = {
           venue_lat?: number | null
           venue_lng?: number | null
           geofence_radius_m?: number
+          venue_id?: string | null
         }
         Update: {
           attendance_code?: string | null
@@ -83,6 +85,7 @@ export type Database = {
           venue_lat?: number | null
           venue_lng?: number | null
           geofence_radius_m?: number
+          venue_id?: string | null
         }
         Relationships: [
           {
@@ -924,6 +927,42 @@ export type Database = {
         }
         Relationships: []
       }
+      venues: {
+        Row: {
+          address: string
+          capacity: number | null
+          created_at: string
+          geofence_radius_m: number
+          id: string
+          is_active: boolean
+          lat: number
+          lng: number
+          name: string
+        }
+        Insert: {
+          address?: string
+          capacity?: number | null
+          created_at?: string
+          geofence_radius_m?: number
+          id?: string
+          is_active?: boolean
+          lat: number
+          lng: number
+          name: string
+        }
+        Update: {
+          address?: string
+          capacity?: number | null
+          created_at?: string
+          geofence_radius_m?: number
+          id?: string
+          is_active?: boolean
+          lat?: number
+          lng?: number
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       activities_with_counts: {
@@ -953,6 +992,11 @@ export type Database = {
           venue_lat: number | null
           venue_lng: number | null
           geofence_radius_m: number | null
+          venue_id: string | null
+          venue_name: string | null
+          geofence_lat: number | null
+          geofence_lng: number | null
+          geofence_radius: number | null
           image_url: string | null
         }
         Relationships: [
@@ -1013,6 +1057,15 @@ export type Database = {
       cancel_reservation: {
         Args: { p_activity_id: string }
         Returns: undefined
+      }
+      activity_geofence: {
+        Args: { p_activity_id: string }
+        Returns: {
+          lat: number
+          lng: number
+          radius_m: number
+          label: string
+        }[]
       }
       geo_distance_m: {
         Args: {

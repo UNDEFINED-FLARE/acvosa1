@@ -25,17 +25,19 @@ interface FormData {
   requirements: string;
   organizer: string;
   geofenceRadius: string;
+  /** Saved venue id, or '' for a one-off custom location. */
+  venueId: string;
 }
 
 const initial: FormData = {
   name: '', description: '', category: 'Workshops', date: '', startTime: '09:00', endTime: '12:00',
   venue: '', capacity: '50', registrationDeadline: '',
   requirements: '', organizer: 'Institute for Rural Development',
-  geofenceRadius: '250',
+  geofenceRadius: '250', venueId: '',
 };
 
 export function AdminCreateActivity() {
-  const { createActivity, uploadActivityImage, pushToast, units } = useApp();
+  const { createActivity, uploadActivityImage, pushToast, units, venues } = useApp();
   const { navigate } = useNav();
   const [form, setForm] = useState<FormData>(initial);
   const [requirementsList, setRequirementsList] = useState<string[]>([]);
@@ -45,6 +47,21 @@ export function AdminCreateActivity() {
   // Defaults to the UNIVEN main campus; admins drag or click to place the venue.
   const [geofenceOn, setGeofenceOn] = useState(true);
   const [venuePoint, setVenuePoint] = useState<LatLng>({ ...UNIVEN_CAMPUS });
+
+  const activeVenues = venues.filter((v) => v.isActive);
+  const selectedVenue = venues.find((v) => v.id === form.venueId) ?? null;
+
+  // Picking a saved venue fills in the venue name and its radius; the fence
+  // itself is resolved from the venue record at check-in time.
+  const chooseVenue = (venueId: string) => {
+    const venue = venues.find((v) => v.id === venueId);
+    setForm((f) => ({
+      ...f,
+      venueId,
+      venue: venue ? venue.name : f.venue,
+      geofenceRadius: venue ? String(venue.geofenceRadiusM) : f.geofenceRadius,
+    }));
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const set = (key: keyof FormData, value: string) => setForm((f) => ({ ...f, [key]: value }));
@@ -104,8 +121,11 @@ export function AdminCreateActivity() {
       organizer: form.organizer,
       imageSeed: form.category.toLowerCase(),
       imageUrl,
-      venueLat: geofenceOn ? venuePoint.lat : null,
-      venueLng: geofenceOn ? venuePoint.lng : null,
+      // A saved venue carries its own fence, so the activity stores only the
+      // link; a custom location stores its own coordinates instead.
+      venueId: selectedVenue ? selectedVenue.id : null,
+      venueLat: selectedVenue ? null : geofenceOn ? venuePoint.lat : null,
+      venueLng: selectedVenue ? null : geofenceOn ? venuePoint.lng : null,
       geofenceRadiusM: Math.min(5000, Math.max(25, parseInt(form.geofenceRadius, 10) || 250)),
     });
     navigate('admin-activities');
@@ -163,8 +183,24 @@ export function AdminCreateActivity() {
               </div>
               <div>
                 <label className={label}>Venue *</label>
-                <input className={field} value={form.venue} onChange={(e) => set('venue', e.target.value)} placeholder="e.g. UNIVEN Main Campus" />
+                {activeVenues.length > 0 ? (
+                  <select className={field} value={form.venueId} onChange={(e) => chooseVenue(e.target.value)}>
+                    <option value="">Custom location…</option>
+                    {activeVenues.map((v) => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input className={field} value={form.venue} onChange={(e) => set('venue', e.target.value)} placeholder="e.g. UNIVEN Main Campus" />
+                )}
               </div>
+
+              {activeVenues.length > 0 && !selectedVenue && (
+                <div className="sm:col-span-2">
+                  <label className={label}>Custom venue name *</label>
+                  <input className={field} value={form.venue} onChange={(e) => set('venue', e.target.value)} placeholder="e.g. Makhado Community Hall" />
+                </div>
+              )}
               <div>
                 <label className={label}>Start time</label>
                 <input type="time" className={field} value={form.startTime} onChange={(e) => set('startTime', e.target.value)} />
@@ -191,24 +227,40 @@ export function AdminCreateActivity() {
                     <LocateFixed size={15} /> Location check-in
                   </h3>
                   <p className="text-xs text-ink-dark-grey/60 mt-1 tracking-tight max-w-sm">
-                    Students must be inside this circle to mark attendance. Click the map or drag the pin
-                    to place the venue.
+                    {selectedVenue
+                      ? `Using the saved check-in area for ${selectedVenue.name}. Edit it under Venues to change it everywhere.`
+                      : 'Students must be inside this circle to mark attendance. Click the map or drag the pin to place the venue.'}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={geofenceOn}
-                  onClick={() => setGeofenceOn((v) => !v)}
-                  className={`shrink-0 w-11 h-6 rounded-full transition-colors relative ${geofenceOn ? 'bg-ink-black' : 'bg-ink-grey'}`}
-                >
-                  <span
-                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink-white transition-all ${geofenceOn ? 'left-[22px]' : 'left-0.5'}`}
-                  />
-                </button>
+                {!selectedVenue && (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={geofenceOn}
+                    onClick={() => setGeofenceOn((v) => !v)}
+                    className={`shrink-0 w-11 h-6 rounded-full transition-colors relative ${geofenceOn ? 'bg-ink-black' : 'bg-ink-grey'}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink-white transition-all ${geofenceOn ? 'left-[22px]' : 'left-0.5'}`}
+                    />
+                  </button>
+                )}
               </div>
 
-              {geofenceOn && (
+              {selectedVenue && (
+                <div className="mt-4">
+                  <VenueMap
+                    venue={{ lat: selectedVenue.lat, lng: selectedVenue.lng }}
+                    radiusM={selectedVenue.geofenceRadiusM}
+                    className="h-56"
+                  />
+                  <p className="text-xs text-ink-dark-grey/55 mt-2 tracking-tight tabular-nums">
+                    {selectedVenue.geofenceRadiusM} m radius · {selectedVenue.lat.toFixed(5)}, {selectedVenue.lng.toFixed(5)}
+                  </p>
+                </div>
+              )}
+
+              {!selectedVenue && geofenceOn && (
                 <div className="mt-4">
                   <VenueMap
                     venue={venuePoint}

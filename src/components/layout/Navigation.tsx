@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard, CalendarDays, CheckSquare, FolderKanban, User,
   Home, Bell, BarChart3, Clock, Settings, FileText, Users, ListChecks, History,
-  Network, Handshake,
+  Network, Handshake, MapPin,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -35,6 +35,7 @@ const adminNav: NavItem[] = [
   { label: 'Units', route: 'units', icon: Network },
   { label: 'Stakeholders', route: 'stakeholders', icon: Handshake },
   { label: 'Impact', route: 'admin-impact', icon: BarChart3 },
+  { label: 'Venues', route: 'admin-venues', icon: MapPin },
   { label: 'Members', route: 'admin-members', icon: Users },
   { label: 'Reports', route: 'admin-reports', icon: FileText },
   { label: 'Settings', route: 'admin-settings', icon: Settings },

@@ -38,6 +38,7 @@ import { AdminImpact } from '@/pages/admin/AdminImpact';
 import { AdminMembers } from '@/pages/admin/AdminMembers';
 import { AdminReports } from '@/pages/admin/AdminReports';
 import { AdminSettings } from '@/pages/admin/AdminSettings';
+import { AdminVenues } from '@/pages/admin/AdminVenues';
 
 function StudentRouter() {
   const { route } = useNav();
@@ -111,6 +112,7 @@ function renderAdmin(route: string) {
     case 'admin-impact': return <AdminImpact />;
     case 'admin-members': return <AdminMembers />;
     case 'admin-reports': return <AdminReports />;
+    case 'admin-venues': return <AdminVenues />;
     case 'admin-settings': return <AdminSettings />;
     case 'units': return <UnitsPage />;
     case 'unit-detail': return <UnitDetail />;

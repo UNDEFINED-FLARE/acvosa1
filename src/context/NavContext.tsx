@@ -29,6 +29,7 @@ export type Route =
   | 'admin-impact'
   | 'admin-members'
   | 'admin-reports'
+  | 'admin-venues'
   | 'admin-settings';
 
 interface NavState {
