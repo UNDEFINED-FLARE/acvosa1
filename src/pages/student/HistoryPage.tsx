@@ -21,10 +21,14 @@ export function HistoryPage() {
       />
 
       <Card className="mt-6 bg-ink-charcoal text-ink-white border-ink-charcoal">
-        <p className="text-sm text-ink-white/70 tracking-tight">
-          The Institute for Rural Development sits within the Faculty of Science, Engineering and Agriculture at the
-          University of Venda, working with rural communities across Limpopo through research, training and engagement.
-          This timeline preserves the milestones that define that work.
+        <p className="text-sm font-medium tracking-tight">
+          “Taking the university to its rightful owners — grassroots communities”
+        </p>
+        <p className="text-sm text-ink-white/70 tracking-tight mt-3">
+          The Institute for Rural Development is the flagship unit of the University of Venda, mandated to spearhead
+          programmes that deliver the university-wide vision of being at the centre of tertiary education for rural and
+          regional development in Southern Africa. Limpopo and Mpumalanga are its principal focal areas. This timeline
+          preserves the milestones that define that work.
         </p>
       </Card>
 

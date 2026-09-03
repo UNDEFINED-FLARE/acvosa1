@@ -193,14 +193,17 @@ export interface User {
 export type UnitStaffCategory =
   | 'Permanent Staff'
   | 'Postgraduate Committee'
+  | 'ACVOSA'
   | 'Innovation Champion'
   | 'Graduate Trainee'
   | 'Intern'
   | 'Research Assistant';
 
+/** Display order of the groups shown on a unit page. */
 export const UNIT_STAFF_CATEGORIES: UnitStaffCategory[] = [
   'Permanent Staff',
   'Postgraduate Committee',
+  'ACVOSA',
   'Innovation Champion',
   'Graduate Trainee',
   'Intern',
